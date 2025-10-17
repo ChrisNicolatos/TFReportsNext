@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="FormTFReportsNextOptions.cs" />
+    <Compile Remove="FormTFReportsNextPrepareFrames.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="FormTFReportsNextPrepareFrames.resx" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\ReportsNext\ReportsNext.csproj" />
+    <ProjectReference Include="..\TFReportsSQLNext\TFReportsSQLNext.csproj" />
+    <ProjectReference Include="..\TFSpreadSheetsNext\TFSpreadSheetsNext.csproj" />
+  </ItemGroup>
+
+</Project>

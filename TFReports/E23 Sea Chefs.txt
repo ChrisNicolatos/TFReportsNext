@@ -1,0 +1,25 @@
+﻿Point 5 – Order of the columns 
+
+If possible to have the same order of columns, as per attached template 
+
+E – Invoice Header Identifier - old column C
+F – Business Unit - old column D
+H – Invoice Number - old column E
+I – Currency - old column F
+J – Invoice Amount - old column G
+K – Invoice Date - old column H
+L – Supplier Name - old column I
+M – Supplier Number - old column J
+N – Supplier Site Number - old column K
+O – Payment Currency - old column L
+P – Invoice Type - old column M
+AU – First party Tax Registration Number - old column N
+BY – Invoice Line - old column O
+BZ – Type “Item” - old column P
+CA – Line Amount - old column Q
+CE – Invoice line description - old column R
+CQ – Distribution Combination “Costing” - old column T
+CX – Tax Classification Code - <NEW ITEM>
+
+
+

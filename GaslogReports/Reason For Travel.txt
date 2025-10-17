@@ -1,0 +1,25 @@
+﻿Firstly - Exclude Omit/Void
+Exclude services
+
+Highlight not verified
+Secondly - separate INV/CN
+
+Thirdly group according to Reason for Travel
+
+- CA-TRAINING COMP
+  Sort and group by Reference then show on screen and allow user to group docs into batches
+
+- ED-ONSIGNER ED-OFFSIGNER
+  1 invoice per vessel
+
+- CA-HSSE
+  1 invoice per vessel
+
+- UKRANIAN CRISIS
+  1 invoice per vessel
+
+- CHAIRMAN AWARDS
+  1 invoice per vessel
+
+- REC-BRIEFING/RECRUITING
+  1 invoice per vessel
