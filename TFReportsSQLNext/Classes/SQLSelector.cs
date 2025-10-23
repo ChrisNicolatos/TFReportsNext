@@ -13,12 +13,11 @@ namespace TFReportsSQLNext.Classes
     {
 
         PNRHistoryNext.PNRs pPNR = new();
-        GaslogReports.E33_Collection pE33_Gaslog;
-        GaslogReports.E35_Collection pE35_Gaslog;
-        GDSImport.GDSImportItems pGDSImport = new();
+        GaslogReports.E33_Collection? pE33_Gaslog;
+        GaslogReports.E35_Collection? pE35_Gaslog;
+        GDSImportNext.GDSImportItems pGDSImport = new();
         ReportsNext.ReportsItem mobjSelectedReport;
         ReportsNext.ReportsCollection mobjReports;
-        SqlDataReader mSQLDataReader;
         public string ReportTitle { get; set; } = "";
         public string ReportFileName { get; set; } = "";
         public SQLSelector(ReportsNext.ReportsItem selectedreport, ReportsNext.ReportsCollection reports)
@@ -32,7 +31,7 @@ namespace TFReportsSQLNext.Classes
             {
                 throw new Exception("No report selected");
             }
-            SqlStatement(false);
+            SqlStatement();
 
         }
         public System.Data.DataSet PrepareDataSet()
@@ -42,7 +41,7 @@ namespace TFReportsSQLNext.Classes
                 throw new Exception("No report selected");
             }
             PrepareFileName();
-            Microsoft.Data.SqlClient.SqlDataAdapter dscmd = new(SqlStatement(false));
+            Microsoft.Data.SqlClient.SqlDataAdapter dscmd = new(SqlStatement());
             System.Data.DataSet ds = new();
             dscmd.Fill(ds);
             if (ds.Tables.Count == 0)
@@ -73,18 +72,18 @@ namespace TFReportsSQLNext.Classes
 
             ReportFileName += $"{ReportTitle}.xlsx";
         }
-        public Microsoft.Data.SqlClient.SqlCommand SqlStatement(bool withReader)
+        public Microsoft.Data.SqlClient.SqlCommand SqlStatement()
         {
             Microsoft.Data.SqlClient.SqlCommand sqlCmd = new();
             StoredProcedures sql = new(mobjSelectedReport.DBConnection, mobjReports);
             switch (mobjSelectedReport.Index)
-            {               
+            {
                 case 7:
                     sqlCmd = sql.E07_ProfitPerOPSGroup();
                     break;
                 case 8:
                     sqlCmd = sql.E08_ProfitPerClientGroup();
-                    break;      
+                    break;
                 case 10:
                     sqlCmd = sql.E10_ProfitPerClientGroupWithExtra();
                     break;
@@ -144,7 +143,7 @@ namespace TFReportsSQLNext.Classes
                     break;
                 case 39:
                     pGDSImport.Read();
-                    break;                           
+                    break;
                 case 43:
                     sqlCmd = sql.E43_DailyProfitReportWithProvisionalAnalysis();
                     break;
@@ -206,18 +205,13 @@ namespace TFReportsSQLNext.Classes
                 case 67:
                     sqlCmd = sql.E67_Columbia();
                     break;
-case 68:
+                case 68:
                     sqlCmd = sql.E68_GDSImportedPendingItems();
                     break;
                 default:
                     throw new Exception("Report not implemented");
             }
-            if (withReader)
-            {
-                mSQLDataReader = sql.Reader(sqlCmd);
-            }
-
-            // Add parameters as needed
+                    
             return sqlCmd;
         }
     }

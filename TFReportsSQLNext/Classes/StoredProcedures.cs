@@ -423,8 +423,9 @@ namespace TFReportsSQLNext.Classes
             sqlComm.Parameters.Add("@ClientCode", SqlDbType.NVarChar, 20).Value = mReport.SelectedCustomer;
             sqlComm.Parameters.Add("@FromDate", SqlDbType.Date).Value = mReport.Date1From;
             sqlComm.Parameters.Add("@ToDate", SqlDbType.Date).Value = mReport.Date1To;
+            sqlComm.Parameters.Add("@InvoicedStatus", SqlDbType.Int).Value = mReport.OptionTriplet; // 0 = All 1 = Uninvoiced 2 = Invoiced
             sqlComm.CommandTimeout = 200;
-            sqlComm.CommandText = "ATPIData.dbo.TFReports_E57_TUI_030366";
+            sqlComm.CommandText = "ATPIData.dbo.TFReports_E57_TUI_030366_1";
             return sqlComm;
 
         }

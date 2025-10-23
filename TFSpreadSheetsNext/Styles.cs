@@ -45,6 +45,10 @@ namespace TFSpreadSheetsNext
         internal SpreadsheetLight.SLStyle xlCentred { get; }
         internal SpreadsheetLight.SLStyle xlCyanWithBorder { get; }
         internal SpreadsheetLight.SLStyle xlBoldWithBorder { get; }
+        /// <summary>
+        /// Pattern:Solid
+        /// ForegroundColor:LightSteelBlue
+        /// </summary>
         internal SpreadsheetLight.SLStyle xlStyleLightSteelBlue { get; }
         internal SpreadsheetLight.SLStyle xlStyleHoneyDew { get; }
         internal SpreadsheetLight.SLStyle xlStyleLemonChiffon { get; }

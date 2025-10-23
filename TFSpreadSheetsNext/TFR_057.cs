@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -56,16 +57,19 @@ namespace TFSpreadSheetsNext
 
             for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
             {
-                string clientdescription = $"{Convert.ToString(mdsDataSet.Tables[0].Rows[i][0])} {Convert.ToString(mdsDataSet.Tables[0].Rows[i][1])}";
-                string vessel = $"{Convert.ToString(mdsDataSet.Tables[0].Rows[i][4])}";
-                string staff = $"{Convert.ToString(mdsDataSet.Tables[0].Rows[i][12])}";
+                var Rows = mdsDataSet.Tables[0].Rows[i];
+
+                string invoicenumber = $"{Convert.ToString(Rows[2])}";
+                string clientdescription = $"{Convert.ToString(Rows[0])} {Convert.ToString(Rows[1])}";
+                string vessel = $"{Convert.ToString(Rows[4])}";
+                string staff = $"{Convert.ToString(Rows[12])}";
                 string clientkey = $"{clientdescription}";
                 string vesselkey = $"{clientdescription}|{vessel}";
                 string staffkey = $"{clientdescription}|{vessel}|{staff}";
-                decimal taxes = Convert.ToDecimal(mdsDataSet.Tables[0].Rows[i][13]);
-                decimal facevalue = Convert.ToDecimal(mdsDataSet.Tables[0].Rows[i][14]);
-                decimal discount = Convert.ToDecimal(mdsDataSet.Tables[0].Rows[i][15]);
-                decimal netpayable = Convert.ToDecimal(mdsDataSet.Tables[0].Rows[i][16]);
+                decimal taxes = Convert.ToDecimal(Rows[13]);
+                decimal facevalue = Convert.ToDecimal(Rows[14]);
+                decimal discount = Convert.ToDecimal(Rows[15]);
+                decimal netpayable = Convert.ToDecimal(Rows[16]);
                 if (WithStaffTotal && (Staff == null || Staff.Key != staffkey))
                 {
                     RowCounter = AddTotalLine(RowCounter, Staff, false);
@@ -86,21 +90,25 @@ namespace TFSpreadSheetsNext
                     Client = new Totals("CLIENT", clientdescription, clientkey);
                 }
                 RowCounter++;
-                xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(mdsDataSet.Tables[0].Rows[i][2]));
-                xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToDateTime(mdsDataSet.Tables[0].Rows[i][3]));
+                xlWorkSheet.SetCellValue(RowCounter, 1, invoicenumber);
+                if (!string.IsNullOrEmpty(invoicenumber)) xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToDateTime(Rows[3]));
                 xlWorkSheet.SetCellValue(RowCounter, 3, vessel);
-                xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(mdsDataSet.Tables[0].Rows[i][5]));
-                xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToInt32(mdsDataSet.Tables[0].Rows[i][6]));
-                xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(mdsDataSet.Tables[0].Rows[i][7]));
-                xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(mdsDataSet.Tables[0].Rows[i][8]));
-                xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDateTime(mdsDataSet.Tables[0].Rows[i][9]));
-                xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(mdsDataSet.Tables[0].Rows[i][10]));
-                xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(mdsDataSet.Tables[0].Rows[i][11]));
+                xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(Rows[5]));
+                xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToInt32(Rows[6]));
+                xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(Rows[7]));
+                xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(Rows[8]));
+                xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDateTime(Rows[9]));
+                xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(Rows[10]));
+                xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(Rows[11]));
                 xlWorkSheet.SetCellValue(RowCounter, 11, staff);
                 xlWorkSheet.SetCellValue(RowCounter, 12, taxes);
                 xlWorkSheet.SetCellValue(RowCounter, 13, facevalue);
                 xlWorkSheet.SetCellValue(RowCounter, 14, discount);
                 xlWorkSheet.SetCellValue(RowCounter, 15, netpayable);
+                if (invoicenumber == "")
+                {
+                    xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, LastColumn, mStyles.xlStyleLightSteelBlue);
+                }
                 Client.Add(taxes, facevalue, discount, netpayable);
                 Vessel.Add(taxes, facevalue, discount, netpayable);
                 if (WithStaffTotal && Staff != null) Staff.Add(taxes, facevalue, discount, netpayable);

@@ -388,21 +388,21 @@ namespace TFReportsNext
             {
                 if (cmbCustomers.DataSource == null)
                 {
-                    TFReportsSQLNext.Classes.ClientDataSet objClients = new();
-                    SqlDataAdapter da = new(objClients.ClientDataSetCmd());
-                    DataSet ds = new();
-                    da.Fill(ds);
-                    cmbCustomers.DataSource = ds.Tables[0];
-                    cmbCustomers.DisplayMember = "DispName";
-                    //objClients.Load();
-                    //foreach (TFReportsSQLNext.Classes.Client client in objClients)
-                    //{
-                    //    cmbCustomers.Items.Add(client);
-                    //}
-                    //if (cmbCustomers.Items.Count > 0)
-                    //{
-                    //    cmbCustomers.SelectedIndex = 0;
-                    //}
+                    TFReportsSQLNext.Classes.ClientList objClients = new();
+                    //SqlDataAdapter da = new(objClients.ClientDataSetCmd());
+                    //DataSet ds = new();
+                    //da.Fill(ds);
+                    //cmbCustomers.DataSource = ds.Tables[0];
+                    //cmbCustomers.DisplayMember = "DispName";
+                    objClients.Load();
+                    foreach (TFReportsSQLNext.Classes.Client client in objClients)
+                    {
+                        cmbCustomers.Items.Add(client);
+                    }
+                    if (cmbCustomers.Items.Count > 0)
+                    {
+                        cmbCustomers.SelectedIndex = 0;
+                    }
                     ValidateOptions();
                 }
             }

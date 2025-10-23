@@ -1,15 +1,19 @@
-﻿using GDSImport;
+﻿using GDSImportNext;
 using System;
 
 namespace ReportsNext
 {
     public partial class Spreadsheets
     {
-        public string E39_GDS_Import_Errors( ReportsNext.ReportsCollection report, GDSImport.GDSImportItems ItemDetails, string FileName)
+        public string E39_GDS_Import_Errors( ReportsNext.ReportsCollection report, GDSImportNext.GDSImportItems? ItemDetails, string FileName)
         {
             int RowCounter;
             try
             {
+                if (ItemDetails == null)
+                {
+                    throw new Exception("No GDS Import Items provided");
+                }
                 ThisDocument.RenameWorksheet(SpreadsheetLight.SLDocument.DefaultFirstSheetName, "GDSImportErrors");
                 ThisDocument.FreezePanes(1, 0);
 

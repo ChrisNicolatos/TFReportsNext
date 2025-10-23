@@ -393,6 +393,10 @@ namespace ReportsNext
                 Date1Text = "Issue Date",
                 Date1Init = ReportsItem.DateInitValue.FirstCurrMonthToToday,
                 ClientCode = ReportsItem.ClientCodeSelect.ClientCodeOnly,
+                OptionsTriplet = true,
+                Options0Text = "All",
+                Options1Text = "Uninvoiced Only",
+                Options2Text = "Invoiced Only",
                 InitialClientCode = "030366",
                 CheckBoxText = "With Staff subtotals",
                 Hidden = false

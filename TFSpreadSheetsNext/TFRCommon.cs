@@ -1,10 +1,13 @@
 ﻿using SpreadsheetLight;
+using System.Drawing;
 
 namespace TFSpreadSheetsNext
 {
     public partial class TFRCommon
     {
         const string NAMETotals = "Totals";
+        const string CompanyNameEnglish = "ATPI Greece Travel Marine S.A., 31-33 Athinon Avenue, 104 47 Athens, Greece";
+        const string CompanyNameGreek = "ATPI Ελλάς - Ταξειδιωτική Ναυτιλιακή Α.Ε., Λ.Αθηνών 31-33, 104 47, Αθήνα-ΑΦΜ 094333389 ΦΑΕ Αθηνών";
 
         public struct TotalRowProps
         {
@@ -39,62 +42,21 @@ namespace TFSpreadSheetsNext
 
 
         System.Data.DataSet mdsDataSet;
-        string[] MonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+       readonly string[] MonthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
         string FileName;
         string mReportTitle;
-        PNRHistoryNext.PNRs pPNR;
-        GaslogReports.E33_Collection pE33_Gaslog;
-        GaslogReports.E35_Collection pE35_Gaslog;
-        GDSImport.GDSImportItems pGDSImport;
-
+        PNRHistoryNext.PNRs? pPNR;
+        GaslogReports.E33_Collection? pE33_Gaslog;
+        GaslogReports.E35_Collection? pE35_Gaslog;
+        GDSImportNext.GDSImportItems? pGDSImport;
 
         ReportsNext.ReportsCollection mobjReports;
         ReportsNext.ReportsItem? mobjSelectedReport;
 
         SpreadsheetLight.SLDocument xlWorkSheet;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleDate;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleTime;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleInteger;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleDecimal;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleDecimalBlankZero;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleDecimalYellow;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleText;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleTextBold;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleTextBoldCentre;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleBold;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleItalic;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleHeader;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleBisqueWithBorder;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleHeaderNotes;
-        //SpreadsheetLight.SLStyle xlStyleTotals;
-        //SpreadsheetLight.SLStyle xlStyleTotalsYellow;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleRedFont;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleRedFontItalic;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleGrayItalic;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleGreenYellow;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleSpringGreen;
-        //SpreadsheetLight.SLStyle mStyles.xlStylePowderBlue;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleSkyBlue;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleSandyBrown;
-        //SpreadsheetLight.SLStyle xlStyleYellowItalic;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleTitle;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleGrey;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleFixed;
-        //SpreadsheetLight.SLStyle xlStyleTitleBold;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleBisque;
-        //SpreadsheetLight.SLStyle xlStyleYellowBold;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleLightGreen;
-        //SpreadsheetLight.SLStyle mStyles.xlCentred;
-        //SpreadsheetLight.SLStyle xlCyanWithBorder;
-        //SpreadsheetLight.SLStyle mStyles.xlBoldWithBorder;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleLightSteelBlue;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleHoneyDew;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleLemonChiffon;
-        //SpreadsheetLight.SLStyle mStyles.xlStyleKhaki;
-        //SpreadsheetLight.SLStyle xlStyleLightGray;
-        //SpreadsheetLight.SLStyle xlStyleYellow;
-        //SpreadsheetLight.SLStyle xlStyleLightGrayItalic;
-        Styles mStyles ;
+        int RowCounter;
+
+        Styles mStyles;
         public TFRCommon(ReportsNext.ReportsItem? mobjselectedseport, ReportsNext.ReportsCollection mobjreports, System.Data.DataSet pDs, string ReportTitle, string filename)
         {
             mobjSelectedReport = mobjselectedseport;
@@ -104,7 +66,6 @@ namespace TFSpreadSheetsNext
             mdsDataSet = pDs;
             xlWorkSheet = new SpreadsheetLight.SLDocument();
             mStyles = new Styles(xlWorkSheet);
-            //PrepareStyles();
         }
         public void ExportToExcel()
         {
@@ -164,10 +125,18 @@ namespace TFSpreadSheetsNext
                         break;
                     case 33:
                     case 61:
+                        if (pE33_Gaslog == null)
+                        {
+                            throw new Exception("Gaslog collection not initialized for E33 report");
+                        }
                         pResponse = mSS2.E33_012212(pE33_Gaslog, FileName);
                         break;
                     case 35:
                     case 62:
+                        if (pE35_Gaslog == null)
+                        {
+                            throw new Exception("Gaslog collection not initialized for E35 report");
+                        }
                         pResponse = mSS2.E35_012217(pE35_Gaslog, FileName);
                         break;
                     case 36:
@@ -227,10 +196,9 @@ namespace TFSpreadSheetsNext
                     case 67:
                         E67_Columbia();
                         break;
-
-
-
-
+                    case 68:
+                        E68_GDSImportedPendingItems();
+                        break;
                     default:
                         {
                             throw new Exception("Report not implemented in Spreadsheets");
@@ -244,199 +212,10 @@ namespace TFSpreadSheetsNext
                 throw;
             }
         }
-        //void PrepareStyles()
-        //{
-        //    mStyles.xlStyleDate = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleDate.FormatCode = "dd/mm/yyyy";
-
-        //    mStyles.xlStyleTime = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleTime.FormatCode = "HH:mm";
-
-        //    mStyles.xlStyleInteger = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleInteger.FormatCode = "#,##0;-#,##0;";
-
-        //    mStyles.xlStyleDecimal = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleDecimal.FormatCode = "#,##0.00;-#,##0.00;";
-
-        //    mStyles.xlStyleDecimalBlankZero = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleDecimalBlankZero.FormatCode = "#,##0.00;-#,##0.00;;@";
-
-
-        //    mStyles.xlStyleDecimalYellow = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleDecimalYellow.Fill.SetPatternForegroundColor(System.Drawing.Color.Yellow);
-        //    mStyles.xlStyleDecimalYellow.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.General);
-        //    mStyles.xlStyleDecimalYellow.FormatCode = "#,##0.00;-#,##0.00;";
-
-        //    mStyles.xlStyleText = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleText.FormatCode = "@";
-
-        //    mStyles.xlStyleTextBold = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleTextBold.FormatCode = "@";
-        //    mStyles.xlStyleTextBold.SetFontBold(true);
-
-        //    mStyles.xlStyleTextBoldCentre = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleTextBoldCentre.FormatCode = "@";
-        //    mStyles.xlStyleTextBoldCentre.SetFontBold(true);
-        //    mStyles.xlStyleTextBoldCentre.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-
-        //    mStyles.xlStyleBold = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleBold.SetFontBold(true);
-
-        //    mStyles.xlBoldWithBorder = xlWorkSheet.CreateStyle();
-        //    mStyles.xlBoldWithBorder.Font.Bold = true;
-        //    mStyles.xlBoldWithBorder.SetTopBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-        //    mStyles.xlBoldWithBorder.SetBottomBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-
-        //    mStyles.xlStyleItalic = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleItalic.Font.Italic = true;
-
-        //    mStyles.xlCentred = xlWorkSheet.CreateStyle();
-        //    mStyles.xlCentred.Alignment.Horizontal = DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center;
-
-        //    mStyles.xlStyleHeader = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleHeader.Font.Bold = true;
-        //    mStyles.xlStyleHeader.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleHeader.Fill.SetPatternForegroundColor(System.Drawing.Color.FromArgb(255, 0, 204, 255));
-        //    mStyles.xlStyleHeader.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-
-        //    mStyles.xlStyleBisqueWithBorder = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleBisqueWithBorder.Font.Bold = true;
-        //    mStyles.xlStyleBisqueWithBorder.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleBisqueWithBorder.Fill.SetPatternForegroundColor(System.Drawing.Color.Bisque);
-        //    mStyles.xlStyleBisqueWithBorder.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-        //    mStyles.xlStyleBisqueWithBorder.SetTopBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-        //    mStyles.xlStyleBisqueWithBorder.SetBottomBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-
-        //    xlCyanWithBorder = xlWorkSheet.CreateStyle();
-        //    xlCyanWithBorder.Font.Bold = true;
-        //    xlCyanWithBorder.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlCyanWithBorder.Fill.SetPatternForegroundColor(System.Drawing.Color.Cyan);
-        //    xlCyanWithBorder.SetTopBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-        //    xlCyanWithBorder.SetBottomBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-
-        //    mStyles.xlStyleHeaderNotes = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleHeaderNotes.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleHeaderNotes.Fill.SetPatternForegroundColor(System.Drawing.Color.FromArgb(255, 169, 208, 142));
-        //    mStyles.xlStyleHeaderNotes.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-
-        //    xlStyleTitleBold = xlWorkSheet.CreateStyle();
-        //    xlStyleTitleBold.Font.Bold = true;
-        //    xlStyleTitleBold.Font.FontSize = 16;
-
-        //    xlStyleTotals = xlWorkSheet.CreateStyle();
-        //    xlStyleTotals.Font.Bold = true;
-        //    xlStyleTotals.SetTopBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-        //    xlStyleTotals.SetBottomBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-
-        //    xlStyleTotalsYellow = xlWorkSheet.CreateStyle();
-        //    xlStyleTotalsYellow.Font.Bold = true;
-        //    xlStyleTotalsYellow.SetTopBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-        //    xlStyleTotalsYellow.SetBottomBorder(DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin, System.Drawing.Color.Black);
-        //    xlStyleTotalsYellow.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlStyleTotalsYellow.Fill.SetPatternForegroundColor(System.Drawing.Color.Yellow);
-
-        //    mStyles.xlStyleFixed = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleFixed.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleFixed.Fill.SetPatternForegroundColor(System.Drawing.Color.FromArgb(255, 142, 169, 219));
-        //    mStyles.xlStyleFixed.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-
-        //    mStyles.xlStyleRedFont = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleRedFont.Font.FontColor = System.Drawing.Color.Red;
-
-        //    mStyles.xlStyleRedFontItalic = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleRedFontItalic.Font.FontColor = System.Drawing.Color.Red;
-        //    mStyles.xlStyleRedFontItalic.Font.Italic = true;
-
-        //    mStyles.xlStyleGrayItalic = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleGrayItalic.Font.FontColor = System.Drawing.Color.Gray;
-        //    mStyles.xlStyleGrayItalic.Font.Italic = true;
-
-        //    xlStyleYellowBold = xlWorkSheet.CreateStyle();
-        //    xlStyleYellowBold.Font.Bold = true;
-        //    xlStyleYellowBold.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlStyleYellowBold.Fill.SetPatternForegroundColor(System.Drawing.Color.Yellow);
-
-        //    xlStyleYellowItalic = xlWorkSheet.CreateStyle();
-        //    xlStyleYellowItalic.Font.Italic = true;
-        //    xlStyleYellowItalic.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlStyleYellowItalic.Fill.SetPatternForegroundColor(System.Drawing.Color.Yellow);
-
-        //    mStyles.xlStyleGreenYellow = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleGreenYellow.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleGreenYellow.Fill.SetPatternForegroundColor(System.Drawing.Color.GreenYellow);
-
-        //    mStyles.xlStyleSpringGreen = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleSpringGreen.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleSpringGreen.Fill.SetPatternForegroundColor(System.Drawing.Color.SpringGreen);
-
-        //    mStyles.xlStylePowderBlue = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStylePowderBlue.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStylePowderBlue.Fill.SetPatternForegroundColor(System.Drawing.Color.PowderBlue);
-
-        //    mStyles.xlStyleSkyBlue = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleSkyBlue.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleSkyBlue.Fill.SetPatternForegroundColor(System.Drawing.Color.SkyBlue);
-
-        //    mStyles.xlStyleLightGreen = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleLightGreen.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleLightGreen.Fill.SetPatternForegroundColor(System.Drawing.Color.LightGreen);
-
-        //    mStyles.xlStyleSandyBrown = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleSandyBrown.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleSandyBrown.Fill.SetPatternForegroundColor(System.Drawing.Color.SandyBrown);
-
-        //    mStyles.xlStyleBisque = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleBisque.Font.Bold = true;
-        //    mStyles.xlStyleBisque.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleBisque.Fill.SetPatternForegroundColor(System.Drawing.Color.Bisque);
-        //    mStyles.xlStyleBisque.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Left);
-
-        //    mStyles.xlStyleGrey = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleGrey.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleGrey.Fill.SetPatternForegroundColor(System.Drawing.Color.FromArgb(255, 191, 191, 191));
-        //    mStyles.xlStyleGrey.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-
-        //    mStyles.xlStyleTitle = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleTitle.Font.Bold = true;
-        //    mStyles.xlStyleTitle.Font.FontSize = 15;
-        //    mStyles.xlStyleTitle.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleTitle.Fill.SetPatternForegroundColor(System.Drawing.Color.FromArgb(255, 191, 191, 191));
-        //    mStyles.xlStyleTitle.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.Center);
-
-        //    mStyles.xlStyleLightSteelBlue = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleLightSteelBlue.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleLightSteelBlue.Fill.SetPatternForegroundColor(System.Drawing.Color.LightSteelBlue);
-
-        //    mStyles.xlStyleHoneyDew = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleHoneyDew.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleHoneyDew.Fill.SetPatternForegroundColor(System.Drawing.Color.Honeydew);
-
-        //    mStyles.xlStyleLemonChiffon = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleLemonChiffon.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleLemonChiffon.Fill.SetPatternForegroundColor(System.Drawing.Color.LemonChiffon);
-
-        //    mStyles.xlStyleKhaki = xlWorkSheet.CreateStyle();
-        //    mStyles.xlStyleKhaki.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    mStyles.xlStyleKhaki.Fill.SetPatternForegroundColor(System.Drawing.Color.Khaki);
-
-        //    xlStyleLightGray = xlWorkSheet.CreateStyle();
-        //    xlStyleLightGray.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlStyleLightGray.Fill.SetPatternForegroundColor(System.Drawing.Color.LightGray);
-
-        //    xlStyleYellow = xlWorkSheet.CreateStyle();
-        //    xlStyleYellow.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlStyleYellow.Fill.SetPatternForegroundColor(System.Drawing.Color.Yellow);
-
-        //    xlStyleLightGrayItalic = xlWorkSheet.CreateStyle();
-        //    xlStyleLightGrayItalic.Font.Italic = true;
-        //    xlStyleLightGrayItalic.Fill.SetPatternType(DocumentFormat.OpenXml.Spreadsheet.PatternValues.Solid);
-        //    xlStyleLightGrayItalic.Fill.SetPatternForegroundColor(System.Drawing.Color.LightGray);
-        //}
         public string E07_ProfitPerOPSgroup()
         {
             var moduleSignature = "TFRCommon.E07_ProfitPerOPSgroup";
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+            RowCounter = 0;
 
             try
             {
@@ -444,7 +223,7 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.RenameWorksheet(SpreadsheetLight.SLDocument.DefaultFirstSheetName, "Profit Per Group");
                 xlWorkSheet.FreezePanes(3, 0);
 
-                xlWorkSheet.SetColumnStyle(4, 8,mStyles.xlStyleDecimal);
+                xlWorkSheet.SetColumnStyle(4, 8, mStyles.xlStyleDecimal);
                 xlWorkSheet.SetColumnStyle(7, mStyles.xlStyleInteger);
                 xlWorkSheet.SetColumnStyle(1, 3, mStyles.xlStyleText);
 
@@ -459,19 +238,19 @@ namespace TFSpreadSheetsNext
                     xlWorkSheet.SetCellValue(3, j + 1, Convert.ToString(table.Columns[j].Caption));
                 }
                 xlWorkSheet.SetCellStyle(3, 1, 3, table.Columns.Count, mStyles.xlStyleHeader);
-                xlINVCount = 0;
+                RowCounter = 0;
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = table.Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 1, Convert.ToString(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 4, Convert.ToDecimal(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 5, Convert.ToDecimal(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 6, Convert.ToDecimal(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 7, Convert.ToInt32(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 8, Convert.ToDecimal(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 4, Convert.ToDecimal(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 5, Convert.ToDecimal(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 6, Convert.ToDecimal(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 7, Convert.ToInt32(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 8, Convert.ToDecimal(row[7]));
                 }
                 xlWorkSheet.AutoFitColumn(1, 8);
                 xlWorkSheet.SaveAs(FileName);
@@ -485,8 +264,7 @@ namespace TFSpreadSheetsNext
         public string E08_ProfitPerclientgroup()
         {
             var moduleSignature = "TFRCommon.E08_ProfitPerclientgroup";
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+            RowCounter = 0;
 
             try
             {
@@ -509,18 +287,18 @@ namespace TFSpreadSheetsNext
                     xlWorkSheet.SetCellValue(3, j + 1, Convert.ToString(table.Columns[j].Caption));
                 }
                 xlWorkSheet.SetCellStyle(3, 1, 3, table.Columns.Count, mStyles.xlStyleHeader);
-                xlINVCount = 0;
+                RowCounter = 0;
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = table.Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 1, Convert.ToString(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 3, Convert.ToDecimal(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 4, Convert.ToDecimal(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 5, Convert.ToDecimal(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 6, Convert.ToInt32(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount + 3, 7, Convert.ToDecimal(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 3, Convert.ToDecimal(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 4, Convert.ToDecimal(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 5, Convert.ToDecimal(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 6, Convert.ToInt32(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter + 3, 7, Convert.ToDecimal(row[6]));
                 }
                 xlWorkSheet.AutoFitColumn(1, 7);
                 xlWorkSheet.SaveAs(FileName);
@@ -534,8 +312,7 @@ namespace TFSpreadSheetsNext
         public string E10_ProfitPerClientGroupExtra()
         {
             var moduleSignature = "TFRCommon.E10_ProfitPerClientGroupExtra";
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+            RowCounter = 0;
 
             try
             {
@@ -558,25 +335,25 @@ namespace TFSpreadSheetsNext
                     xlWorkSheet.SetCellValue(3, j + 1, Convert.ToString(table.Columns[j].Caption));
                 }
                 xlWorkSheet.SetCellStyle(3, 1, 3, table.Columns.Count, mStyles.xlStyleHeader);
-                xlINVCount = 3;
+                RowCounter = 3;
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = table.Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToDecimal(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToDecimal(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToDecimal(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDecimal(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDecimal(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDecimal(row[10]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDecimal(row[11]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToInt32(row[12]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToDecimal(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToDecimal(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToDecimal(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDecimal(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDecimal(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDecimal(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToInt32(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDecimal(row[13]));
 
                 }
                 xlWorkSheet.AutoFitColumn(1, 14);
@@ -981,8 +758,8 @@ namespace TFSpreadSheetsNext
         }
         public string E18_AirTicketSales()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -1060,96 +837,98 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.SetCellStyle(1, 1, 1, 46, mStyles.xlStyleHeader);
 
-                xlINVCount = 1;
+                RowCounter = 1;
                 var table = mdsDataSet.Tables[0];
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
                     var row = table.Rows[i];
                     bool booleanOption1 = Convert.ToBoolean(mobjReports.GetType().GetProperty("BooleanOption1")?.GetValue(mobjReports, null));
+                    
+                    string temp37 = row[37] == DBNull.Value ? string.Empty : row[37]?.ToString() ?? string.Empty;
                     if (!booleanOption1 ||
-                        (Convert.ToString(row[3]) == "" && Convert.ToString(row[4]) == "" && Convert.ToString(row[37]).Trim() == ""))
+                        (Convert.ToString(row[3]) == "" && Convert.ToString(row[4]) == "" && temp37.Trim() == ""))
                     {
-                        xlINVCount++;
-                        xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row[0]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[7]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToInt32(row[8]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[9]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row[10]));
+                        RowCounter++;
+                        xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToDateTime(row[0]));
+                        xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                        xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                        xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                        xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                        xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
+                        xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));
+                        xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[7]));
+                        xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToInt32(row[8]));
+                        xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[9]));
+                        xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[10]));
 
 
                         if (booleanOption1)
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[25]));
+                            xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[25]));
 
                         }
 
                         if (Convert.ToInt32(row[13]) != 0)
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[11]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[12]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[13]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToDateTime(row[14]));
+                            xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[11]));
+                            xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[12]));
+                            xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[13]));
+                            xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDateTime(row[14]));
                         }
-                        xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[15]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToString(row[16]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row[17]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[20]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[22]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[23]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToDecimal(row[24]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToString(row[25]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToString(row[26]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToString(row[27]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToInt32(row[28]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToString(row[29]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToString(row[30]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToString(row[31]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, Convert.ToString(row[32]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToString(row[33]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToString(row[34]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToDateTime(row[35]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToDateTime(row[36]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 38, Convert.ToString(row[37]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToString(row[38]));
+                        xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[15]));
+                        xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[16]));
+                        xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[17]));
+                        xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19]));
+                        xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[20]));
+                        xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21]));
+                        xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[22]));
+                        xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[23]));
+                        xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToDecimal(row[24]));
+                        xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToString(row[25]));
+                        xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToString(row[26]));
+                        xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToString(row[27]));
+                        xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToInt32(row[28]));
+                        xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToString(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToString(row[30]));
+                        xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToString(row[31]));
+                        xlWorkSheet.SetCellValue(RowCounter, 33, Convert.ToString(row[32]));
+                        xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToString(row[33]));
+                        xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToString(row[34]));
+                        xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToDateTime(row[35]));
+                        xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToDateTime(row[36]));
+                        xlWorkSheet.SetCellValue(RowCounter, 38, Convert.ToString(row[37]));
+                        xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToString(row[38]));
 
                         if (Convert.ToInt32(row[39]) == 43)
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 40, "Cancelled");
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 46, mStyles.xlStyleItalic);
+                            xlWorkSheet.SetCellValue(RowCounter, 40, "Cancelled");
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 46, mStyles.xlStyleItalic);
                         }
                         else if (!string.IsNullOrEmpty(Convert.ToString(row[40])))
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 40, $"Cancels {Convert.ToString(row[40])}");
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 46, mStyles.xlStyleItalic);
+                            xlWorkSheet.SetCellValue(RowCounter, 40, $"Cancels {Convert.ToString(row[40])}");
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 46, mStyles.xlStyleItalic);
                         }
-                        xlWorkSheet.SetCellValue(xlINVCount, 41, Convert.ToString(row[41]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 42, Convert.ToString(row[42]));
+                        xlWorkSheet.SetCellValue(RowCounter, 41, Convert.ToString(row[41]));
+                        xlWorkSheet.SetCellValue(RowCounter, 42, Convert.ToString(row[42]));
 
                         if (!string.IsNullOrEmpty(Convert.ToString(row[3])))
                         {
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 46, mStyles.xlStyleSandyBrown);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 46, mStyles.xlStyleSandyBrown);
                         }
                         if (!string.IsNullOrEmpty(Convert.ToString(row[4])))
                         {
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 46, mStyles.xlStyleGrayItalic);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 46, mStyles.xlStyleGrayItalic);
                         }
                         if (Convert.ToString(row[10]) == "Refund")
                         {
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 46, mStyles.xlStyleRedFont);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 46, mStyles.xlStyleRedFont);
                         }
-                        xlWorkSheet.SetCellValue(xlINVCount, 43, Convert.ToDecimal(row[43]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 44, Convert.ToDecimal(row[44]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 45, Convert.ToDecimal(row[45]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 46, Convert.ToInt32(row[46]));
+                        xlWorkSheet.SetCellValue(RowCounter, 43, Convert.ToDecimal(row[43]));
+                        xlWorkSheet.SetCellValue(RowCounter, 44, Convert.ToDecimal(row[44]));
+                        xlWorkSheet.SetCellValue(RowCounter, 45, Convert.ToDecimal(row[45]));
+                        xlWorkSheet.SetCellValue(RowCounter, 46, Convert.ToInt32(row[46]));
 
                     }
                 }
@@ -1170,8 +949,8 @@ namespace TFSpreadSheetsNext
             int DBITEMSerProfitPerPax = 45;
             int DBITEMTotProfitPerPax = 64;
 
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -1232,79 +1011,79 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.MergeWorksheetCells(2, 28, 2, 46);
                 xlWorkSheet.MergeWorksheetCells(2, 47, 2, 65);
 
-                xlINVCount = 3;
+                RowCounter = 3;
                 decimal[] pTotals = new decimal[65];
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlINVCount++;
+                    RowCounter++;
                     for (int j = 0; j <= 64; j++)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[0]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToDateTime(row[3]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[7]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[8]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[9]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDecimal(row[10]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDecimal(row[11]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToDecimal(row[12]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToDecimal(row[13]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToDecimal(row[14]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToDecimal(row[15]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToDecimal(row[16]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToDecimal(row[17]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToDecimal(row[18]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToDecimal(row[19]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToDecimal(row[20]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToDecimal(row[21]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToDecimal(row[22]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToDecimal(row[23]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToDecimal(row[24]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToInt32(row[25]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToDecimal(row[26]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToDecimal(row[27]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToDecimal(row[28]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToDecimal(row[29]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToDecimal(row[30]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToDecimal(row[31]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, Convert.ToDecimal(row[32]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToDecimal(row[33]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToDecimal(row[34]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToDecimal(row[35]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToDecimal(row[36]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 38, Convert.ToDecimal(row[37]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToDecimal(row[38]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 40, Convert.ToDecimal(row[39]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 41, Convert.ToDecimal(row[40]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 42, Convert.ToDecimal(row[41]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 43, Convert.ToDecimal(row[42]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 44, Convert.ToDecimal(row[43]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 45, Convert.ToInt32(row[44]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 46, Convert.ToDecimal(row[45]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 47, Convert.ToDecimal(row[46]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 48, Convert.ToDecimal(row[47]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 49, Convert.ToDecimal(row[48]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 50, Convert.ToDecimal(row[49]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 51, Convert.ToDecimal(row[50]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 52, Convert.ToDecimal(row[51]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 53, Convert.ToDecimal(row[52]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 54, Convert.ToDecimal(row[53]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 55, Convert.ToDecimal(row[54]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 56, Convert.ToDecimal(row[55]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 57, Convert.ToDecimal(row[56]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 58, Convert.ToDecimal(row[57]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 59, Convert.ToDecimal(row[58]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 60, Convert.ToDecimal(row[59]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 61, Convert.ToDecimal(row[60]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 62, Convert.ToDecimal(row[61]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 63, Convert.ToDecimal(row[62]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 64, Convert.ToInt32(row[63]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 65, Convert.ToDecimal(row[64]));
+                        xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[0]));
+                        xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                        xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                        xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToDateTime(row[3]));
+                        xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                        xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
+                        xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));
+                        xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[7]));
+                        xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[8]));
+                        xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[9]));
+                        xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[10]));
+                        xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[11]));
+                        xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDecimal(row[12]));
+                        xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDecimal(row[13]));
+                        xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDecimal(row[14]));
+                        xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToDecimal(row[15]));
+                        xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToDecimal(row[16]));
+                        xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToDecimal(row[17]));
+                        xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToDecimal(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToDecimal(row[19]));
+                        xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToDecimal(row[20]));
+                        xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToDecimal(row[21]));
+                        xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToDecimal(row[22]));
+                        xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToDecimal(row[23]));
+                        xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToDecimal(row[24]));
+                        xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToInt32(row[25]));
+                        xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToDecimal(row[26]));
+                        xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToDecimal(row[27]));
+                        xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToDecimal(row[28]));
+                        xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToDecimal(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToDecimal(row[30]));
+                        xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToDecimal(row[31]));
+                        xlWorkSheet.SetCellValue(RowCounter, 33, Convert.ToDecimal(row[32]));
+                        xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToDecimal(row[33]));
+                        xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToDecimal(row[34]));
+                        xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToDecimal(row[35]));
+                        xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToDecimal(row[36]));
+                        xlWorkSheet.SetCellValue(RowCounter, 38, Convert.ToDecimal(row[37]));
+                        xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToDecimal(row[38]));
+                        xlWorkSheet.SetCellValue(RowCounter, 40, Convert.ToDecimal(row[39]));
+                        xlWorkSheet.SetCellValue(RowCounter, 41, Convert.ToDecimal(row[40]));
+                        xlWorkSheet.SetCellValue(RowCounter, 42, Convert.ToDecimal(row[41]));
+                        xlWorkSheet.SetCellValue(RowCounter, 43, Convert.ToDecimal(row[42]));
+                        xlWorkSheet.SetCellValue(RowCounter, 44, Convert.ToDecimal(row[43]));
+                        xlWorkSheet.SetCellValue(RowCounter, 45, Convert.ToInt32(row[44]));
+                        xlWorkSheet.SetCellValue(RowCounter, 46, Convert.ToDecimal(row[45]));
+                        xlWorkSheet.SetCellValue(RowCounter, 47, Convert.ToDecimal(row[46]));
+                        xlWorkSheet.SetCellValue(RowCounter, 48, Convert.ToDecimal(row[47]));
+                        xlWorkSheet.SetCellValue(RowCounter, 49, Convert.ToDecimal(row[48]));
+                        xlWorkSheet.SetCellValue(RowCounter, 50, Convert.ToDecimal(row[49]));
+                        xlWorkSheet.SetCellValue(RowCounter, 51, Convert.ToDecimal(row[50]));
+                        xlWorkSheet.SetCellValue(RowCounter, 52, Convert.ToDecimal(row[51]));
+                        xlWorkSheet.SetCellValue(RowCounter, 53, Convert.ToDecimal(row[52]));
+                        xlWorkSheet.SetCellValue(RowCounter, 54, Convert.ToDecimal(row[53]));
+                        xlWorkSheet.SetCellValue(RowCounter, 55, Convert.ToDecimal(row[54]));
+                        xlWorkSheet.SetCellValue(RowCounter, 56, Convert.ToDecimal(row[55]));
+                        xlWorkSheet.SetCellValue(RowCounter, 57, Convert.ToDecimal(row[56]));
+                        xlWorkSheet.SetCellValue(RowCounter, 58, Convert.ToDecimal(row[57]));
+                        xlWorkSheet.SetCellValue(RowCounter, 59, Convert.ToDecimal(row[58]));
+                        xlWorkSheet.SetCellValue(RowCounter, 60, Convert.ToDecimal(row[59]));
+                        xlWorkSheet.SetCellValue(RowCounter, 61, Convert.ToDecimal(row[60]));
+                        xlWorkSheet.SetCellValue(RowCounter, 62, Convert.ToDecimal(row[61]));
+                        xlWorkSheet.SetCellValue(RowCounter, 63, Convert.ToDecimal(row[62]));
+                        xlWorkSheet.SetCellValue(RowCounter, 64, Convert.ToInt32(row[63]));
+                        xlWorkSheet.SetCellValue(RowCounter, 65, Convert.ToDecimal(row[64]));
 
                         if (j > 7)
                         {
@@ -1314,11 +1093,11 @@ namespace TFSpreadSheetsNext
 
                     if (Convert.ToBoolean(row[65]))
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 66, "Omit");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 5, xlINVCount, 6, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellValue(RowCounter, 66, "Omit");
+                        xlWorkSheet.SetCellStyle(RowCounter, 5, RowCounter, 6, mStyles.xlStyleSandyBrown);
                     }
-                    xlWorkSheet.SetCellValue(xlINVCount, 67, Convert.ToString(row[67]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 68, Convert.ToString(row[68]));
+                    xlWorkSheet.SetCellValue(RowCounter, 67, Convert.ToString(row[67]));
+                    xlWorkSheet.SetCellValue(RowCounter, 68, Convert.ToString(row[68]));
 
                 }
 
@@ -1332,10 +1111,10 @@ namespace TFSpreadSheetsNext
                     ? pTotals[DBITEMTotProfitPerPax - 2] / pTotals[DBITEMTotProfitPerPax - 1]
                     : 0;
 
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 2, "TOTAL");
+                xlWorkSheet.SetCellValue(RowCounter + 1, 2, "TOTAL");
                 for (int j = 8; j <= 64; j++)
                 {
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, j + 1, pTotals[j]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, j + 1, pTotals[j]);
                 }
 
                 for (int iNeg = 0; iNeg < mdsDataSet.Tables[0].Rows.Count; iNeg++)
@@ -1350,11 +1129,11 @@ namespace TFSpreadSheetsNext
                     }
                 }
 
-                xlWorkSheet.SetCellStyle(xlINVCount + 1, 9, xlINVCount + 1, 67, mStyles.xlStyleHeader);
+                xlWorkSheet.SetCellStyle(RowCounter + 1, 9, RowCounter + 1, 67, mStyles.xlStyleHeader);
 
-                xlWorkSheet.SetCellStyle(3, DBITEMAirProfitPerPax + 1, xlINVCount + 1, DBITEMAirProfitPerPax + 1, mStyles.xlStyleDecimalYellow);
-                xlWorkSheet.SetCellStyle(3, DBITEMSerProfitPerPax + 1, xlINVCount + 1, DBITEMSerProfitPerPax + 1, mStyles.xlStyleDecimalYellow);
-                xlWorkSheet.SetCellStyle(3, DBITEMTotProfitPerPax + 1, xlINVCount + 1, DBITEMTotProfitPerPax + 1, mStyles.xlStyleDecimalYellow);
+                xlWorkSheet.SetCellStyle(3, DBITEMAirProfitPerPax + 1, RowCounter + 1, DBITEMAirProfitPerPax + 1, mStyles.xlStyleDecimalYellow);
+                xlWorkSheet.SetCellStyle(3, DBITEMSerProfitPerPax + 1, RowCounter + 1, DBITEMSerProfitPerPax + 1, mStyles.xlStyleDecimalYellow);
+                xlWorkSheet.SetCellStyle(3, DBITEMTotProfitPerPax + 1, RowCounter + 1, DBITEMTotProfitPerPax + 1, mStyles.xlStyleDecimalYellow);
 
                 xlWorkSheet.SetColumnStyle(26, mStyles.xlStyleInteger);
                 xlWorkSheet.SetColumnStyle(45, mStyles.xlStyleInteger);
@@ -1362,9 +1141,9 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.AutoFitColumn(0, 68);
 
-                xlWorkSheet.SetCellStyle(3, 9, xlINVCount + 1, 14, mStyles.xlStyleGrayItalic);
-                xlWorkSheet.SetCellStyle(3, 28, xlINVCount + 1, 33, mStyles.xlStyleGrayItalic);
-                xlWorkSheet.SetCellStyle(3, 47, xlINVCount + 1, 52, mStyles.xlStyleGrayItalic);
+                xlWorkSheet.SetCellStyle(3, 9, RowCounter + 1, 14, mStyles.xlStyleGrayItalic);
+                xlWorkSheet.SetCellStyle(3, 28, RowCounter + 1, 33, mStyles.xlStyleGrayItalic);
+                xlWorkSheet.SetCellStyle(3, 47, RowCounter + 1, 52, mStyles.xlStyleGrayItalic);
                 xlWorkSheet.GroupColumns(9, 14);
                 xlWorkSheet.CollapseColumns(15);
                 xlWorkSheet.GroupColumns(28, 33);
@@ -1393,8 +1172,8 @@ namespace TFSpreadSheetsNext
         }
         public string E19a_ProfitReportInvoicesTotal()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -1426,32 +1205,32 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.SetCellStyle(1, 1, 1, 14, mStyles.xlStyleHeader);
 
-                xlINVCount = 1;
+                RowCounter = 1;
                 var table = mdsDataSet.Tables[0];
                 for (int i = 0; i < table.Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = table.Rows[i];
                     // Use Convert.ToXXX to prevent type errors
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, row[0]?.ToString());
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToDecimal(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToDecimal(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToDecimal(row[1]) - Convert.ToDecimal(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToDecimal(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDecimal(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDecimal(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[4]) - Convert.ToDecimal(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[1]) + Convert.ToDecimal(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDecimal(row[2]) + Convert.ToDecimal(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, (Convert.ToDecimal(row[1]) - Convert.ToDecimal(row[2])) + (Convert.ToDecimal(row[4]) - Convert.ToDecimal(row[5])));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToDecimal(row[3]) + Convert.ToDecimal(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, row[0]?.ToString());
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToDecimal(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToDecimal(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToDecimal(row[1]) - Convert.ToDecimal(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDecimal(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDecimal(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDecimal(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[4]) - Convert.ToDecimal(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[1]) + Convert.ToDecimal(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[2]) + Convert.ToDecimal(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, (Convert.ToDecimal(row[1]) - Convert.ToDecimal(row[2])) + (Convert.ToDecimal(row[4]) - Convert.ToDecimal(row[5])));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDecimal(row[3]) + Convert.ToDecimal(row[6]));
                     if (Convert.ToDecimal(row[3]) != 0)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 14, -Convert.ToDecimal(row[6]) / Convert.ToDecimal(row[3]) * 100);
+                        xlWorkSheet.SetCellValue(RowCounter, 14, -Convert.ToDecimal(row[6]) / Convert.ToDecimal(row[3]) * 100);
                     }
                 }
-                xlWorkSheet.Sort(2, 1, xlINVCount, 14, 12, false);
+                xlWorkSheet.Sort(2, 1, RowCounter, 14, 12, false);
                 xlWorkSheet.AutoFitColumn(1, 14);
 
                 xlWorkSheet.SaveAs(FileName);
@@ -1464,8 +1243,8 @@ namespace TFSpreadSheetsNext
         }
         public string E20_HellasConfidence()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 1;
+
+            RowCounter = 1;
 
             try
             {
@@ -1509,34 +1288,34 @@ namespace TFSpreadSheetsNext
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToInt32(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToString(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row[10]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[11]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToInt32(row[12]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToDateTime(row[13]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToString(row[14]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToDecimal(row[15]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToString(row[16]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row[17]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[20]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToDateTime(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToInt32(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToInt32(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDateTime(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToDecimal(row[15]));
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[16]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[17]));
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18]));
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19]));
+                    xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[20]));
+                    xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21]));
 
                     if (Convert.ToString(row[9]) == "Refund")
                     {
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 22, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 22, mStyles.xlStyleRedFont);
                     }
                 }
 
@@ -1552,8 +1331,8 @@ namespace TFSpreadSheetsNext
         }
         public string E22_Euronav()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
             int pSheet = 0;
             int columnShift = mobjReports.BooleanOption1 ? 1 : 0;
 
@@ -1596,7 +1375,7 @@ namespace TFSpreadSheetsNext
                     xlWorkSheet.SetCellValue(1, 18 + columnShift, "ConnectedDocument");
                     xlWorkSheet.SetCellStyle(1, 1, 1, 18 + columnShift, mStyles.xlStyleHeader);
 
-                    xlINVCount = 1;
+                    RowCounter = 1;
                     for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                     {
                         var row = mdsDataSet.Tables[0].Rows[i];
@@ -1606,55 +1385,55 @@ namespace TFSpreadSheetsNext
                         {
                             if (Convert.ToString(row[3]) == "" && Convert.ToString(row[4]) == "" && Convert.ToString(row[25]) == "")
                             {
-                                xlINVCount++;
-                                xlWorkSheet.SetCellValue(xlINVCount, 1, $"{Convert.ToString(row[11])} {Convert.ToString(row[12])}");
-                                xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToInt32(row[13]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToDateTime(row[14]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[15]));
+                                RowCounter++;
+                                xlWorkSheet.SetCellValue(RowCounter, 1, $"{Convert.ToString(row[11])} {Convert.ToString(row[12])}");
+                                xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToInt32(row[13]));
+                                xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToDateTime(row[14]));
+                                xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[15]));
                                 var routing = Convert.ToString(row[30]);
-                                xlWorkSheet.SetCellValue(xlINVCount, 6, "");
-                                xlWorkSheet.SetCellValue(xlINVCount, 7, "");
+                                xlWorkSheet.SetCellValue(RowCounter, 6, "");
+                                xlWorkSheet.SetCellValue(RowCounter, 7, "");
                                 if (!string.IsNullOrEmpty(routing))
                                 {
-                                    xlWorkSheet.SetCellValue(xlINVCount, 5, routing);
+                                    xlWorkSheet.SetCellValue(RowCounter, 5, routing);
                                     if (Convert.ToString(row[27]) == "AIR" && routing.Length > 3)
                                     {
-                                        xlWorkSheet.SetCellValue(xlINVCount, 6, routing.Substring(routing.Length - 3));
-                                        xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDateTime(row[35]));
+                                        xlWorkSheet.SetCellValue(RowCounter, 6, routing.Substring(routing.Length - 3));
+                                        xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDateTime(row[35]));
                                     }
                                 }
 
                                 if (columnShift == 0)
                                 {
-                                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[24]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[24]));
                                 }
                                 else
                                 {
-                                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[39]));
-                                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToString(row[40]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[39]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[40]));
                                 }
-                                xlWorkSheet.SetCellValue(xlINVCount, 9 + columnShift, Convert.ToString(row[16]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 10 + columnShift, Convert.ToString(row[17]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 11 + columnShift, Convert.ToString(row[23]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 12 + columnShift, Convert.ToString(row[22]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 13 + columnShift, Convert.ToString(row[7]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 14 + columnShift, Convert.ToString(row[38]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 15 + columnShift, Convert.ToString(row[19]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 16 + columnShift, Convert.ToString(row[1]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 17 + columnShift, Convert.ToString(row[5]));
-                                xlWorkSheet.SetCellValue(xlINVCount, 18 + columnShift, Convert.ToString(row[37]));
+                                xlWorkSheet.SetCellValue(RowCounter, 9 + columnShift, Convert.ToString(row[16]));
+                                xlWorkSheet.SetCellValue(RowCounter, 10 + columnShift, Convert.ToString(row[17]));
+                                xlWorkSheet.SetCellValue(RowCounter, 11 + columnShift, Convert.ToString(row[23]));
+                                xlWorkSheet.SetCellValue(RowCounter, 12 + columnShift, Convert.ToString(row[22]));
+                                xlWorkSheet.SetCellValue(RowCounter, 13 + columnShift, Convert.ToString(row[7]));
+                                xlWorkSheet.SetCellValue(RowCounter, 14 + columnShift, Convert.ToString(row[38]));
+                                xlWorkSheet.SetCellValue(RowCounter, 15 + columnShift, Convert.ToString(row[19]));
+                                xlWorkSheet.SetCellValue(RowCounter, 16 + columnShift, Convert.ToString(row[1]));
+                                xlWorkSheet.SetCellValue(RowCounter, 17 + columnShift, Convert.ToString(row[5]));
+                                xlWorkSheet.SetCellValue(RowCounter, 18 + columnShift, Convert.ToString(row[37]));
 
                                 if (Convert.ToString(row[3]) != "")
                                 {
-                                    xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 18 + columnShift, mStyles.xlStyleSandyBrown);
+                                    xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 18 + columnShift, mStyles.xlStyleSandyBrown);
                                 }
                                 if (Convert.ToString(row[4]) != "")
                                 {
-                                    xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 18 + columnShift, mStyles.xlStyleGrayItalic);
+                                    xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 18 + columnShift, mStyles.xlStyleGrayItalic);
                                 }
                                 if (Convert.ToString(row[11]) == "Refund")
                                 {
-                                    xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 18 + columnShift, mStyles.xlStyleRedFont);
+                                    xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 18 + columnShift, mStyles.xlStyleRedFont);
                                 }
                             }
                         }
@@ -1674,9 +1453,9 @@ namespace TFSpreadSheetsNext
         }
         public string E23_SeaChefs()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
+
             int pLastColumn = 0;
-            int xlINVCount = 0;
+            RowCounter = 0;
             int xlHeaderID = 0;
             string pInvNumber = "";
             int pInvRow = 0;
@@ -1706,7 +1485,7 @@ namespace TFSpreadSheetsNext
                 foreach (var bby in pBookedBy)
                 {
                     pLastColumn = 143;
-                    xlINVCount = 0;
+                    RowCounter = 0;
                     xlHeaderID = 0;
                     pInvNumber = "";
                     pInvRow = 0;
@@ -1886,13 +1665,13 @@ namespace TFSpreadSheetsNext
                     xlWorkSheet.SetCellStyle(8, 1, 8, pLastColumn, mStyles.xlStyleHeader);
                     xlWorkSheet.SetRowHeight(8, 56.25);
 
-                    xlINVCount = 8;
+                    RowCounter = 8;
                     if (mdsDataSet.Tables[0].Rows.Count > 0)
                     {
                         var firstRow = mdsDataSet.Tables[0].Rows[0];
                         pInvNumber = firstRow[4] == DBNull.Value ? string.Empty : firstRow[4]?.ToString() ?? string.Empty;
                     }
-                    pInvRow = xlINVCount + 1;
+                    pInvRow = RowCounter + 1;
                     pInvSum = 0;
                     xlHeaderID = 1;
 
@@ -1901,7 +1680,7 @@ namespace TFSpreadSheetsNext
                         var row = mdsDataSet.Tables[0].Rows[i];
                         if (!mobjReports.BooleanOption1 || Convert.ToString(row[32]) == bby)
                         {
-                            xlINVCount++;
+                            RowCounter++;
                             if (Convert.ToString(row[4]) == pInvNumber)
                             {
                                 pInvSum += Convert.ToDecimal(row[16]);
@@ -1910,7 +1689,7 @@ namespace TFSpreadSheetsNext
                             {
                                 xlHeaderID++;
                                 xlWorkSheet.SetCellValue(pInvRow, 10, pInvSum);
-                                for (int k = pInvRow + 1; k < xlINVCount; k++)
+                                for (int k = pInvRow + 1; k < RowCounter; k++)
                                 {
                                     xlWorkSheet.SetCellStyle(k, 6, mStyles.xlStyleGrey);
                                     xlWorkSheet.SetCellStyle(k, 10, mStyles.xlStyleGrey);
@@ -1921,36 +1700,36 @@ namespace TFSpreadSheetsNext
                                 }
                                 pInvSum = Convert.ToDecimal(row[16]);
                                 pInvNumber = row[4] == DBNull.Value ? string.Empty : row[4]?.ToString() ?? string.Empty;
-                                pInvRow = xlINVCount;
+                                pInvRow = RowCounter;
                             }
 
-                            xlWorkSheet.SetCellValue(xlINVCount, 5, xlHeaderID);
-                            xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[3]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToInt32(row[4]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToString(row[5]));
+                            xlWorkSheet.SetCellValue(RowCounter, 5, xlHeaderID);
+                            xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[3]));
+                            xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToInt32(row[4]));
+                            xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[5]));
 
-                            xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDateTime(row[7]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[8]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[9]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[10]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToString(row[11]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[12]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 47, Convert.ToString(row[13]));
+                            xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDateTime(row[7]));
+                            xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[8]));
+                            xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[9]));
+                            xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[10]));
+                            xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row[11]));
+                            xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[12]));
+                            xlWorkSheet.SetCellValue(RowCounter, 47, Convert.ToString(row[13]));
 
-                            xlWorkSheet.SetCellValue(xlINVCount, 78, Convert.ToInt32(row[14]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 79, Convert.ToString(row[15]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 80, Convert.ToDecimal(row[16]));
+                            xlWorkSheet.SetCellValue(RowCounter, 78, Convert.ToInt32(row[14]));
+                            xlWorkSheet.SetCellValue(RowCounter, 79, Convert.ToString(row[15]));
+                            xlWorkSheet.SetCellValue(RowCounter, 80, Convert.ToDecimal(row[16]));
 
-                            xlWorkSheet.SetCellValue(xlINVCount, 84, Convert.ToString(row[17]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 96, Convert.ToString(row[19]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 103, Convert.ToString(row[44]));
+                            xlWorkSheet.SetCellValue(RowCounter, 84, Convert.ToString(row[17]));
+                            xlWorkSheet.SetCellValue(RowCounter, 96, Convert.ToString(row[19]));
+                            xlWorkSheet.SetCellValue(RowCounter, 103, Convert.ToString(row[44]));
                         }
                     }
 
                     if (!string.IsNullOrEmpty(pInvNumber) && pInvSum != 0)
                     {
                         xlWorkSheet.SetCellValue(pInvRow, 10, pInvSum);
-                        for (int k = pInvRow + 1; k <= xlINVCount; k++)
+                        for (int k = pInvRow + 1; k <= RowCounter; k++)
                         {
                             xlWorkSheet.SetCellStyle(k, 6, mStyles.xlStyleGrey);
                             xlWorkSheet.SetCellStyle(k, 10, mStyles.xlStyleGrey);
@@ -1981,8 +1760,8 @@ namespace TFSpreadSheetsNext
         }
         public string E24_ProfitPerAgentTotals()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 1;
+
+            RowCounter = 1;
 
             try
             {
@@ -2011,18 +1790,18 @@ namespace TFSpreadSheetsNext
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDecimal(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDecimal(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToInt32(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDecimal(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDecimal(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToInt32(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[9]));
 
                 }
 
@@ -2038,8 +1817,8 @@ namespace TFSpreadSheetsNext
         }
         public string E25_ProfitPerAgentTransactions()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 1;
+
+            RowCounter = 1;
 
             try
             {
@@ -2072,20 +1851,20 @@ namespace TFSpreadSheetsNext
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDateTime(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToInt32(row[10]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDecimal(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDateTime(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToInt32(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[11]));
 
 
                 }
@@ -2102,9 +1881,9 @@ namespace TFSpreadSheetsNext
         }
         public string E29_SeaChefsDetailed()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
+
             int pLastColumn = 23;
-            int xlINVCount = 0;
+            RowCounter = 0;
             int xlHeaderID = 0;
             string pInvNumber = "";
             int pInvRow = 0;
@@ -2215,17 +1994,17 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.SetCellStyle(8, 1, 8, pLastColumn, mStyles.xlStyleHeader);
                 xlWorkSheet.SetRowHeight(8, 56.25);
 
-                xlINVCount = 8;
+                RowCounter = 8;
                 var firstRow = mdsDataSet.Tables[0].Rows[0];
                 pInvNumber = firstRow[4] == DBNull.Value ? string.Empty : firstRow[4]?.ToString() ?? string.Empty;
-                pInvRow = xlINVCount + 1;
+                pInvRow = RowCounter + 1;
                 pInvSum = 0;
                 xlHeaderID = 1;
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlINVCount++;
+                    RowCounter++;
 
                     if (Convert.ToString(row[4]) == pInvNumber)
                     {
@@ -2235,7 +2014,7 @@ namespace TFSpreadSheetsNext
                     {
                         xlHeaderID++;
                         xlWorkSheet.SetCellValue(pInvRow, 7, pInvSum);
-                        for (int k = pInvRow + 1; k < xlINVCount; k++)
+                        for (int k = pInvRow + 1; k < RowCounter; k++)
                         {
                             xlWorkSheet.SetCellStyle(k, 4, mStyles.xlStyleGrey);
                             xlWorkSheet.SetCellStyle(k, 7, mStyles.xlStyleGrey);
@@ -2246,62 +2025,62 @@ namespace TFSpreadSheetsNext
                         }
                         pInvSum = Convert.ToDecimal(row[16]);
                         pInvNumber = row[4] == DBNull.Value ? string.Empty : row[4]?.ToString() ?? string.Empty;
-                        pInvRow = xlINVCount;
+                        pInvRow = RowCounter;
                     }
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, xlHeaderID);
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToInt32(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, xlHeaderID);
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToInt32(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDateTime(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToString(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row[10]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[11]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[12]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[13]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToInt32(row[14]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[15]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToDecimal(row[16]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row[17]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[20]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[22]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDateTime(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToInt32(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[15]));
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToDecimal(row[16]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[17]));
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18]));
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19]));
+                    xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[20]));
+                    xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21]));
+                    xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[22]));
                     if (mobjReports.BooleanOption1)
                     {
 
-                        xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[23]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToString(row[24]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToString(row[25]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToString(row[26]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToString(row[27]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToInt32(row[28]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToString(row[29]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToInt32(row[30]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToString(row[31]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, Convert.ToString(row[32]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToString(row[33]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToString(row[34]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToString(row[35]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToString(row[36]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 38, Convert.ToString(row[37]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToString(row[38]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 40, Convert.ToString(row[39]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 41, Convert.ToString(row[40]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 42, Convert.ToInt32(row[41]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 43, Convert.ToString(row[42]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 44, Convert.ToString(row[43]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 45, Convert.ToString(row[44]));
+                        xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[23]));
+                        xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToString(row[24]));
+                        xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToString(row[25]));
+                        xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToString(row[26]));
+                        xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToString(row[27]));
+                        xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToInt32(row[28]));
+                        xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToString(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToInt32(row[30]));
+                        xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToString(row[31]));
+                        xlWorkSheet.SetCellValue(RowCounter, 33, Convert.ToString(row[32]));
+                        xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToString(row[33]));
+                        xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToString(row[34]));
+                        xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToString(row[35]));
+                        xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToString(row[36]));
+                        xlWorkSheet.SetCellValue(RowCounter, 38, Convert.ToString(row[37]));
+                        xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToString(row[38]));
+                        xlWorkSheet.SetCellValue(RowCounter, 40, Convert.ToString(row[39]));
+                        xlWorkSheet.SetCellValue(RowCounter, 41, Convert.ToString(row[40]));
+                        xlWorkSheet.SetCellValue(RowCounter, 42, Convert.ToInt32(row[41]));
+                        xlWorkSheet.SetCellValue(RowCounter, 43, Convert.ToString(row[42]));
+                        xlWorkSheet.SetCellValue(RowCounter, 44, Convert.ToString(row[43]));
+                        xlWorkSheet.SetCellValue(RowCounter, 45, Convert.ToString(row[44]));
                     }
                 }
 
                 if (!string.IsNullOrEmpty(pInvNumber) && pInvSum != 0)
                 {
                     xlWorkSheet.SetCellValue(pInvRow, 7, pInvSum);
-                    for (int k = pInvRow + 1; k <= xlINVCount; k++)
+                    for (int k = pInvRow + 1; k <= RowCounter; k++)
                     {
                         xlWorkSheet.SetCellStyle(k, 4, mStyles.xlStyleGrey);
                         xlWorkSheet.SetCellStyle(k, 7, mStyles.xlStyleGrey);
@@ -2324,8 +2103,8 @@ namespace TFSpreadSheetsNext
         }
         public string E30_AirTicketsFullDetails()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 1;
+
+            RowCounter = 1;
 
             try
             {
@@ -2364,20 +2143,20 @@ namespace TFSpreadSheetsNext
                 // Data rows
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = mdsDataSet.Tables[0].Rows[i];
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToInt32(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToDateTime(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToInt32(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[10]));
 
 
                     // Inv fields (11-14) only if InvNumber != 0
@@ -2385,89 +2164,89 @@ namespace TFSpreadSheetsNext
                     {
                         for (int j = 11; j <= 14; j++)
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[11]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[12]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[13]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToDateTime(row[14]));
+                            xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[11]));
+                            xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[12]));
+                            xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[13]));
+                            xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDateTime(row[14]));
                         }
                     }
 
                     // Columns 15-23
                     for (int j = 15; j <= 23; j++)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[15]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToString(row[16]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row[17]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[20]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[22]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[23]));
+                        xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[15]));
+                        xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[16]));
+                        xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[17]));
+                        xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19]));
+                        xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[20]));
+                        xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21]));
+                        xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[22]));
+                        xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[23]));
 
                     }
 
 
                     // FC and NetPayable FC
-                    xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToString(row[66]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToDecimal(row[65]));
+                    xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToString(row[66]));
+                    xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToDecimal(row[65]));
 
                     if (Convert.ToInt32(row[67]) == 1)
-                        xlWorkSheet.SetCellStyle(xlINVCount, 25, xlINVCount, 26, mStyles.xlStyleLightGrayItalic);
+                        xlWorkSheet.SetCellStyle(RowCounter, 25, RowCounter, 26, mStyles.xlStyleLightGrayItalic);
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToDecimal(row[24]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToDecimal(row[25]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToDecimal(row[26]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToDecimal(row[27]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToDecimal(row[28]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToDecimal(row[29]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 33, Convert.ToDecimal(row[30]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToDecimal(row[31]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToDecimal(row[32]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToDecimal(row[33]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToString(row[34]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 38, Convert.ToString(row[35]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToString(row[36]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 40, Convert.ToInt32(row[37]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 41, Convert.ToString(row[38]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 42, Convert.ToString(row[39]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 43, Convert.ToString(row[40]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 44, Convert.ToString(row[41]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 45, Convert.ToString(row[42]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 46, Convert.ToString(row[43]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 47, Convert.ToDateTime(row[44]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 48, Convert.ToDateTime(row[45]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 49, Convert.ToString(row[46]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 50, Convert.ToString(row[47]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 51, Convert.ToString(row[48]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 52, Convert.ToString(row[49]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 53, Convert.ToString(row[50]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 54, Convert.ToString(row[51]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 55, Convert.ToString(row[52]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 56, Convert.ToString(row[53]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 57, Convert.ToString(row[54]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 58, Convert.ToString(row[55]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 59, Convert.ToString(row[56]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 60, Convert.ToString(row[57]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 61, Convert.ToString(row[58]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 62, Convert.ToString(row[59]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 63, Convert.ToString(row[60]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 64, Convert.ToString(row[61]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 65, Convert.ToString(row[62]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 66, Convert.ToString(row[63]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 67, Convert.ToString(row[64]));
+                    xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToDecimal(row[24]));
+                    xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToDecimal(row[25]));
+                    xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToDecimal(row[26]));
+                    xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToDecimal(row[27]));
+                    xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToDecimal(row[28]));
+                    xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToDecimal(row[29]));
+                    xlWorkSheet.SetCellValue(RowCounter, 33, Convert.ToDecimal(row[30]));
+                    xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToDecimal(row[31]));
+                    xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToDecimal(row[32]));
+                    xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToDecimal(row[33]));
+                    xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToString(row[34]));
+                    xlWorkSheet.SetCellValue(RowCounter, 38, Convert.ToString(row[35]));
+                    xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToString(row[36]));
+                    xlWorkSheet.SetCellValue(RowCounter, 40, Convert.ToInt32(row[37]));
+                    xlWorkSheet.SetCellValue(RowCounter, 41, Convert.ToString(row[38]));
+                    xlWorkSheet.SetCellValue(RowCounter, 42, Convert.ToString(row[39]));
+                    xlWorkSheet.SetCellValue(RowCounter, 43, Convert.ToString(row[40]));
+                    xlWorkSheet.SetCellValue(RowCounter, 44, Convert.ToString(row[41]));
+                    xlWorkSheet.SetCellValue(RowCounter, 45, Convert.ToString(row[42]));
+                    xlWorkSheet.SetCellValue(RowCounter, 46, Convert.ToString(row[43]));
+                    xlWorkSheet.SetCellValue(RowCounter, 47, Convert.ToDateTime(row[44]));
+                    xlWorkSheet.SetCellValue(RowCounter, 48, Convert.ToDateTime(row[45]));
+                    xlWorkSheet.SetCellValue(RowCounter, 49, Convert.ToString(row[46]));
+                    xlWorkSheet.SetCellValue(RowCounter, 50, Convert.ToString(row[47]));
+                    xlWorkSheet.SetCellValue(RowCounter, 51, Convert.ToString(row[48]));
+                    xlWorkSheet.SetCellValue(RowCounter, 52, Convert.ToString(row[49]));
+                    xlWorkSheet.SetCellValue(RowCounter, 53, Convert.ToString(row[50]));
+                    xlWorkSheet.SetCellValue(RowCounter, 54, Convert.ToString(row[51]));
+                    xlWorkSheet.SetCellValue(RowCounter, 55, Convert.ToString(row[52]));
+                    xlWorkSheet.SetCellValue(RowCounter, 56, Convert.ToString(row[53]));
+                    xlWorkSheet.SetCellValue(RowCounter, 57, Convert.ToString(row[54]));
+                    xlWorkSheet.SetCellValue(RowCounter, 58, Convert.ToString(row[55]));
+                    xlWorkSheet.SetCellValue(RowCounter, 59, Convert.ToString(row[56]));
+                    xlWorkSheet.SetCellValue(RowCounter, 60, Convert.ToString(row[57]));
+                    xlWorkSheet.SetCellValue(RowCounter, 61, Convert.ToString(row[58]));
+                    xlWorkSheet.SetCellValue(RowCounter, 62, Convert.ToString(row[59]));
+                    xlWorkSheet.SetCellValue(RowCounter, 63, Convert.ToString(row[60]));
+                    xlWorkSheet.SetCellValue(RowCounter, 64, Convert.ToString(row[61]));
+                    xlWorkSheet.SetCellValue(RowCounter, 65, Convert.ToString(row[62]));
+                    xlWorkSheet.SetCellValue(RowCounter, 66, Convert.ToString(row[63]));
+                    xlWorkSheet.SetCellValue(RowCounter, 67, Convert.ToString(row[64]));
 
 
                     // Net Remit
-                    xlWorkSheet.SetCellValue(xlINVCount, 68, Convert.ToString(row[68]));
+                    xlWorkSheet.SetCellValue(RowCounter, 68, Convert.ToString(row[68]));
 
                     // Style for Omit/Void/Refund
                     if (!string.IsNullOrEmpty(Convert.ToString(row[3])))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 68, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 68, mStyles.xlStyleSandyBrown);
                     if (!string.IsNullOrEmpty(Convert.ToString(row[4])))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 68, mStyles.xlStyleGrayItalic);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 68, mStyles.xlStyleGrayItalic);
                     if (Convert.ToString(row[10]) == "Refund")
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 68, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 68, mStyles.xlStyleRedFont);
                 }
 
                 xlWorkSheet.AutoFitColumn(1, 68);
@@ -2482,8 +2261,8 @@ namespace TFSpreadSheetsNext
         }
         public string E36_SeaChefs_AllUnits()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
             int xlHeaderID = 0;
             string pInvNumber = "";
             int pInvRow = 0;
@@ -2536,17 +2315,17 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.SetCellStyle(1, 1, 1, 32, mStyles.xlStyleHeader);
 
-                xlINVCount = 1;
+                RowCounter = 1;
                 var firstRow = mdsDataSet.Tables[0].Rows[0];
                 pInvNumber = firstRow[6] == DBNull.Value ? string.Empty : firstRow[6]?.ToString() ?? string.Empty;
-                pInvRow = xlINVCount + 1;
+                pInvRow = RowCounter + 1;
                 pInvSum = 0;
                 xlHeaderID = 1;
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlINVCount++;
+                    RowCounter++;
 
                     if (Convert.ToString(row[6]) == pInvNumber)
                     {
@@ -2556,7 +2335,7 @@ namespace TFSpreadSheetsNext
                     {
                         xlHeaderID++;
                         xlWorkSheet.SetCellValue(pInvRow, 9, pInvSum);
-                        for (int k = pInvRow + 1; k < xlINVCount; k++)
+                        for (int k = pInvRow + 1; k < RowCounter; k++)
                         {
                             xlWorkSheet.SetCellStyle(k, 5, k, 9, mStyles.xlStyleGrey);
                             xlWorkSheet.SetCellValue(k, 5, "");
@@ -2567,43 +2346,43 @@ namespace TFSpreadSheetsNext
                         }
                         pInvSum = Convert.ToDecimal(row[8]);
                         pInvNumber = row[6] == DBNull.Value ? string.Empty : row[6]?.ToString() ?? string.Empty;
-                        pInvRow = xlINVCount;
+                        pInvRow = RowCounter;
                     }
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, xlHeaderID);
+                    xlWorkSheet.SetCellValue(RowCounter, 5, xlHeaderID);
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToInt32(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDateTime(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDateTime(row[10]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDateTime(row[11]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToInt32(row[12]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[13]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToString(row[14]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[15]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToString(row[16]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToInt32(row[17]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[20]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[22]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[23]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToString(row[24]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToString(row[25]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToString(row[26]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToString(row[27]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToInt32(row[28]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToString(row[29]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToString(row[30]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToString(row[31]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToInt32(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDateTime(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDateTime(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDateTime(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToInt32(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[15]));
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[16]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToInt32(row[17]));
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18]));
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19]));
+                    xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[20]));
+                    xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21]));
+                    xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[22]));
+                    xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[23]));
+                    xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToString(row[24]));
+                    xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToString(row[25]));
+                    xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToString(row[26]));
+                    xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToString(row[27]));
+                    xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToInt32(row[28]));
+                    xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToString(row[29]));
+                    xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToString(row[30]));
+                    xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToString(row[31]));
 
 
                 }
@@ -2611,7 +2390,7 @@ namespace TFSpreadSheetsNext
                 if (!string.IsNullOrEmpty(pInvNumber) && pInvSum != 0)
                 {
                     xlWorkSheet.SetCellValue(pInvRow, 9, pInvSum);
-                    for (int k = pInvRow + 1; k <= xlINVCount; k++)
+                    for (int k = pInvRow + 1; k <= RowCounter; k++)
                     {
                         xlWorkSheet.SetCellStyle(k, 5, k, 9, mStyles.xlStyleGrey);
                         xlWorkSheet.SetCellValue(k, 5, "");
@@ -2634,8 +2413,8 @@ namespace TFSpreadSheetsNext
         }
         public string E38_AirTicketSales()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 1;
+
+            RowCounter = 1;
 
             try
             {
@@ -2704,7 +2483,7 @@ namespace TFSpreadSheetsNext
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlINVCount++;
+                    RowCounter++;
 
                     // Invoice Code
                     string inv = "";
@@ -2713,70 +2492,70 @@ namespace TFSpreadSheetsNext
                         inv = $"{Convert.ToString(row[11])} {Convert.ToString(row[12])} {Convert.ToString(row[13])}".Replace("  ", " ").Trim();
                     }
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row[14]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToDateTime(row[35]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[16]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, inv);
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[15]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[30]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[29]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[24]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[18]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDateTime(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToInt32(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[10]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[17]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToDateTime(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToDateTime(row[35]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[16]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, inv);
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[15]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[30]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[29]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[24]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[18]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDateTime(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToInt32(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[17]));
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[19]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[20]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[21]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToString(row[22]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToString(row[23]));
+                    xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[19]));
+                    xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[20]));
+                    xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[21]));
+                    xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToString(row[22]));
+                    xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToString(row[23]));
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToString(row[25]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToString(row[26]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToString(row[27]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToInt32(row[28]));
+                    xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToString(row[25]));
+                    xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToString(row[26]));
+                    xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToString(row[27]));
+                    xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToInt32(row[28]));
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToString(row[31]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToString(row[32]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 33, Convert.ToString(row[33]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToString(row[34]));
+                    xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToString(row[31]));
+                    xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToString(row[32]));
+                    xlWorkSheet.SetCellValue(RowCounter, 33, Convert.ToString(row[33]));
+                    xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToString(row[34]));
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToDateTime(row[36]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToString(row[37]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToString(row[38]));
+                    xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToDateTime(row[36]));
+                    xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToString(row[37]));
+                    xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToString(row[38]));
 
                     if (Convert.ToInt32(row[39]) == 43)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 38, "Cancelled");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 38, mStyles.xlStyleItalic);
+                        xlWorkSheet.SetCellValue(RowCounter, 38, "Cancelled");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 38, mStyles.xlStyleItalic);
                     }
                     else if (!string.IsNullOrEmpty(Convert.ToString(row[40])))
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 38, $"Cancels {Convert.ToString(row[40])}");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 38, mStyles.xlStyleItalic);
+                        xlWorkSheet.SetCellValue(RowCounter, 38, $"Cancels {Convert.ToString(row[40])}");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 38, mStyles.xlStyleItalic);
                     }
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToString(row[41]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 40, Convert.ToString(row[42]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 41, Convert.ToString(row["SuppCode"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 42, Convert.ToString(row["SuppName"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToString(row[41]));
+                    xlWorkSheet.SetCellValue(RowCounter, 40, Convert.ToString(row[42]));
+                    xlWorkSheet.SetCellValue(RowCounter, 41, Convert.ToString(row["SuppCode"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 42, Convert.ToString(row["SuppName"]));
 
                     if (!string.IsNullOrEmpty(Convert.ToString(row[3])))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 38, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 38, mStyles.xlStyleSandyBrown);
                     if (!string.IsNullOrEmpty(Convert.ToString(row[4])))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 38, mStyles.xlStyleGrayItalic);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 38, mStyles.xlStyleGrayItalic);
                     if (Convert.ToString(row[10]) == "Refund")
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 38, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 38, mStyles.xlStyleRedFont);
                 }
 
                 xlWorkSheet.AutoFitColumn(1, 42);
@@ -2791,8 +2570,8 @@ namespace TFSpreadSheetsNext
         }
         public string E43_DailyProfitReportWithProvisionalAnalysis()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -2892,7 +2671,7 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.MergeWorksheetCells(1, 47, 1, 50);
                 xlWorkSheet.MergeWorksheetCells(1, 51, 1, 54);
 
-                xlINVCount = 3;
+                RowCounter = 3;
                 decimal[] pTotals = new decimal[95];
                 decimal[] pOtherClients = new decimal[95];
                 int pTopClients = 0;
@@ -2960,99 +2739,99 @@ namespace TFSpreadSheetsNext
                     {
                         if (mobjReports.BooleanOption1 && !string.IsNullOrEmpty(row[1].ToString()))
                         {
-                            int pFirstGroupRow = xlINVCount + 1;
-                            int pLastGroupRow = xlINVCount + 1;
+                            int pFirstGroupRow = RowCounter + 1;
+                            int pLastGroupRow = RowCounter + 1;
                             for (int ii = i; ii < mdsDataSet.Tables[0].Rows.Count; ii++)
                             {
                                 var row2 = mdsDataSet.Tables[0].Rows[ii];
                                 if (row2[0].ToString() == "2" && row2[1].ToString() == row[1].ToString())
                                 {
-                                    xlINVCount++;
+                                    RowCounter++;
                                     for (int jj = 2; jj <= 29; jj++)
-                                        xlWorkSheet.SetCellValue(xlINVCount, jj - 1, Convert.ToDecimal(row2[jj]));
-                                    xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToDecimal(row2[85]));
-                                    xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToDecimal(row2[86]));
-                                    xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToDecimal(row2[87]));
+                                        xlWorkSheet.SetCellValue(RowCounter, jj - 1, Convert.ToDecimal(row2[jj]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToDecimal(row2[85]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToDecimal(row2[86]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToDecimal(row2[87]));
                                     for (int jj = 30; jj <= 42; jj++)
-                                        xlWorkSheet.SetCellValue(xlINVCount, jj + 2, Convert.ToDecimal(row2[jj]));
-                                    xlWorkSheet.SetCellValue(xlINVCount, 45, Convert.ToDecimal(row2[81]));
-                                    xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 54, mStyles.xlStyleGrayItalic);
+                                        xlWorkSheet.SetCellValue(RowCounter, jj + 2, Convert.ToDecimal(row2[jj]));
+                                    xlWorkSheet.SetCellValue(RowCounter, 45, Convert.ToDecimal(row2[81]));
+                                    xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 54, mStyles.xlStyleGrayItalic);
                                     if (Convert.ToDecimal(row2[42]) < Convert.ToDecimal(row2[81]))
-                                        xlWorkSheet.SetCellStyle(xlINVCount, 44, mStyles.xlStyleRedFontItalic);
-                                    xlWorkSheet.SetCellValue(xlINVCount, 46, Convert.ToDecimal(row2[80]));
+                                        xlWorkSheet.SetCellStyle(RowCounter, 44, mStyles.xlStyleRedFontItalic);
+                                    xlWorkSheet.SetCellValue(RowCounter, 46, Convert.ToDecimal(row2[80]));
                                     if (Convert.ToDecimal(row2[82]) != 0 || !Convert.IsDBNull(row2[94]))
                                     {
-                                        xlWorkSheet.SetCellValue(xlINVCount, 47, Convert.ToDecimal(row2[84]));
-                                        xlWorkSheet.SetCellValue(xlINVCount, 48, Convert.ToDecimal(row2[82]));
+                                        xlWorkSheet.SetCellValue(RowCounter, 47, Convert.ToDecimal(row2[84]));
+                                        xlWorkSheet.SetCellValue(RowCounter, 48, Convert.ToDecimal(row2[82]));
                                         if (pProfitUninvoicedRows[ii] != 0)
-                                            xlWorkSheet.SetCellValue(xlINVCount, 49, pProfitUninvoicedRows[ii]);
-                                        xlWorkSheet.SetCellValue(xlINVCount, 50, Convert.ToDecimal(row2[94]));
+                                            xlWorkSheet.SetCellValue(RowCounter, 49, pProfitUninvoicedRows[ii]);
+                                        xlWorkSheet.SetCellValue(RowCounter, 50, Convert.ToDecimal(row2[94]));
                                     }
                                     if (Convert.ToDecimal(row2[91]) != 0 || !Convert.IsDBNull(row2[95]))
                                     {
-                                        xlWorkSheet.SetCellValue(xlINVCount, 51, Convert.ToDecimal(row2[93]));
-                                        xlWorkSheet.SetCellValue(xlINVCount, 52, Convert.ToDecimal(row2[91]));
+                                        xlWorkSheet.SetCellValue(RowCounter, 51, Convert.ToDecimal(row2[93]));
+                                        xlWorkSheet.SetCellValue(RowCounter, 52, Convert.ToDecimal(row2[91]));
                                         if (pProfitUninvoicedRowsLater[ii] != 0)
-                                            xlWorkSheet.SetCellValue(xlINVCount, 53, pProfitUninvoicedRowsLater[ii]);
-                                        xlWorkSheet.SetCellValue(xlINVCount, 54, Convert.ToDecimal(row2[95]));
+                                            xlWorkSheet.SetCellValue(RowCounter, 53, pProfitUninvoicedRowsLater[ii]);
+                                        xlWorkSheet.SetCellValue(RowCounter, 54, Convert.ToDecimal(row2[95]));
                                     }
-                                    pLastGroupRow = xlINVCount;
+                                    pLastGroupRow = RowCounter;
                                 }
                             }
                             xlWorkSheet.GroupRows(pFirstGroupRow, pLastGroupRow);
                             xlWorkSheet.CollapseRows(pLastGroupRow + 1);
                         }
-                        xlINVCount++;
-                        xlWorkSheet.SetCellValue(xlINVCount, 1, (string)row[2]);
-                        xlWorkSheet.SetCellValue(xlINVCount, 2, (string)row[3]);
+                        RowCounter++;
+                        xlWorkSheet.SetCellValue(RowCounter, 1, (string)row[2]);
+                        xlWorkSheet.SetCellValue(RowCounter, 2, (string)row[3]);
                         for (int j = 4; j <= 29; j++)
                         {
                             if (j == 15 || j == 28)
                             {
-                                xlWorkSheet.SetCellValue(xlINVCount, j - 1, (int)row[j]);
+                                xlWorkSheet.SetCellValue(RowCounter, j - 1, (int)row[j]);
                                 pTotals[j] += (int)(row[j]);
                             }
                             else
                             {
-                                xlWorkSheet.SetCellValue(xlINVCount, j - 1, Convert.ToDecimal(row[j]));
+                                xlWorkSheet.SetCellValue(RowCounter, j - 1, Convert.ToDecimal(row[j]));
                                 pTotals[j] += Convert.ToDecimal(row[j]);
                             }
                         }
-                        xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToDecimal(row[85]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToDecimal(row[86]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToDecimal(row[87]));
+                        xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToDecimal(row[85]));
+                        xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToDecimal(row[86]));
+                        xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToDecimal(row[87]));
                         pTotals[86] += Convert.ToDecimal(row[85]);
                         pTotals[87] += Convert.ToDecimal(row[86]);
                         pTotals[88] += Convert.ToDecimal(row[87]);
                         for (int j = 30; j <= 42; j++)
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, j + 2, Convert.ToDecimal(row[j]));
+                            xlWorkSheet.SetCellValue(RowCounter, j + 2, Convert.ToDecimal(row[j]));
                             pTotals[j] += Convert.ToDecimal(row[j]);
                         }
                         pTotals[79] += Convert.ToDecimal(row[79]);
                         pTotals[80] += Convert.ToDecimal(row[80]);
-                        xlWorkSheet.SetCellValue(xlINVCount, 45, Convert.ToDecimal(row[81]));
+                        xlWorkSheet.SetCellValue(RowCounter, 45, Convert.ToDecimal(row[81]));
                         if (Convert.ToDecimal(row[42]) < Convert.ToDecimal(row[81]))
-                            xlWorkSheet.SetCellStyle(xlINVCount, 44, mStyles.xlStyleRedFont);
-                        xlWorkSheet.SetCellValue(xlINVCount, 46, Convert.ToDecimal(row[80]));
+                            xlWorkSheet.SetCellStyle(RowCounter, 44, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellValue(RowCounter, 46, Convert.ToDecimal(row[80]));
                         if (Convert.ToDecimal(row[82]) != 0 || !Convert.IsDBNull(row[94]))
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 47, Convert.ToDecimal(row[84]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 48, Convert.ToDecimal(row[82]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 49, pProfitUninvoicedRows[i]);
+                            xlWorkSheet.SetCellValue(RowCounter, 47, Convert.ToDecimal(row[84]));
+                            xlWorkSheet.SetCellValue(RowCounter, 48, Convert.ToDecimal(row[82]));
+                            xlWorkSheet.SetCellValue(RowCounter, 49, pProfitUninvoicedRows[i]);
                             if (!Convert.IsDBNull(row[94]))
-                                xlWorkSheet.SetCellValue(xlINVCount, 50, Convert.ToDateTime(row[94]));
+                                xlWorkSheet.SetCellValue(RowCounter, 50, Convert.ToDateTime(row[94]));
                             pTotals[82] += Convert.ToDecimal(row[82]);
                             pTotals[84] += Convert.ToDecimal(row[84]);
                             pTotals[85] += pProfitUninvoicedRows[i];
                         }
                         if (Convert.ToDecimal(row[91]) != 0 || !Convert.IsDBNull(row[95]))
                         {
-                            xlWorkSheet.SetCellValue(xlINVCount, 51, Convert.ToDecimal(row[93]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 52, Convert.ToDecimal(row[91]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 53, pProfitUninvoicedRowsLater[i]);
+                            xlWorkSheet.SetCellValue(RowCounter, 51, Convert.ToDecimal(row[93]));
+                            xlWorkSheet.SetCellValue(RowCounter, 52, Convert.ToDecimal(row[91]));
+                            xlWorkSheet.SetCellValue(RowCounter, 53, pProfitUninvoicedRowsLater[i]);
                             if (!Convert.IsDBNull(row[95]))
-                                xlWorkSheet.SetCellValue(xlINVCount, 54, Convert.ToDateTime(row[95]));
+                                xlWorkSheet.SetCellValue(RowCounter, 54, Convert.ToDateTime(row[95]));
                             pTotals[92] += Convert.ToDecimal(row[93]);
                             pTotals[93] += Convert.ToDecimal(row[91]);
                             pTotals[94] += pProfitUninvoicedRowsLater[i];
@@ -3087,41 +2866,41 @@ namespace TFSpreadSheetsNext
                     pOtherClients[29] = pOtherClients[28] != 0 ? pOtherClients[27] / pOtherClients[28] : 0;
                     pOtherClients[42] = pOtherClients[41] != 0 ? pOtherClients[40] / pOtherClients[41] : 0;
                     pOtherClients[81] = pOtherClients[80] != 0 ? pOtherClients[79] / pOtherClients[80] : 0;
-                    xlINVCount++;
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, "Other Clients");
+                    RowCounter++;
+                    xlWorkSheet.SetCellValue(RowCounter, 1, "Other Clients");
                     for (int j = 4; j <= 29; j++)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, j - 1, pOtherClients[j]);
+                        xlWorkSheet.SetCellValue(RowCounter, j - 1, pOtherClients[j]);
                         pTotals[j] += pOtherClients[j];
                     }
-                    xlWorkSheet.SetCellValue(xlINVCount, 29, pOtherClients[86]);
-                    xlWorkSheet.SetCellValue(xlINVCount, 30, pOtherClients[87]);
-                    xlWorkSheet.SetCellValue(xlINVCount, 31, pOtherClients[88]);
+                    xlWorkSheet.SetCellValue(RowCounter, 29, pOtherClients[86]);
+                    xlWorkSheet.SetCellValue(RowCounter, 30, pOtherClients[87]);
+                    xlWorkSheet.SetCellValue(RowCounter, 31, pOtherClients[88]);
                     for (int j = 30; j <= 42; j++)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, j + 2, pOtherClients[j]);
+                        xlWorkSheet.SetCellValue(RowCounter, j + 2, pOtherClients[j]);
                         pTotals[j] += pOtherClients[j];
                     }
                     pTotals[79] += pOtherClients[79];
                     pTotals[80] += pOtherClients[80];
-                    xlWorkSheet.SetCellValue(xlINVCount, 45, pOtherClients[81]);
+                    xlWorkSheet.SetCellValue(RowCounter, 45, pOtherClients[81]);
                     if (pOtherClients[42] < pOtherClients[81])
-                        xlWorkSheet.SetCellStyle(xlINVCount, 44, mStyles.xlStyleRedFont);
-                    xlWorkSheet.SetCellValue(xlINVCount, 46, pOtherClients[80]);
+                        xlWorkSheet.SetCellStyle(RowCounter, 44, mStyles.xlStyleRedFont);
+                    xlWorkSheet.SetCellValue(RowCounter, 46, pOtherClients[80]);
                     if (pOtherClients[82] != 0 || pOtherClients[84] != 0)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 47, pOtherClients[84]);
-                        xlWorkSheet.SetCellValue(xlINVCount, 48, pOtherClients[82]);
-                        xlWorkSheet.SetCellValue(xlINVCount, 49, pOtherClients[85]);
+                        xlWorkSheet.SetCellValue(RowCounter, 47, pOtherClients[84]);
+                        xlWorkSheet.SetCellValue(RowCounter, 48, pOtherClients[82]);
+                        xlWorkSheet.SetCellValue(RowCounter, 49, pOtherClients[85]);
                         pTotals[82] += pOtherClients[82];
                         pTotals[84] += pOtherClients[84];
                         pTotals[85] += pOtherClients[85];
                     }
                     if (pOtherClients[92] != 0 || pOtherClients[93] != 0)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 51, pOtherClients[93]);
-                        xlWorkSheet.SetCellValue(xlINVCount, 52, pOtherClients[92]);
-                        xlWorkSheet.SetCellValue(xlINVCount, 53, pOtherClients[94]);
+                        xlWorkSheet.SetCellValue(RowCounter, 51, pOtherClients[93]);
+                        xlWorkSheet.SetCellValue(RowCounter, 52, pOtherClients[92]);
+                        xlWorkSheet.SetCellValue(RowCounter, 53, pOtherClients[94]);
                         pTotals[92] += pOtherClients[92];
                         pTotals[93] += pOtherClients[93];
                         pTotals[94] += pOtherClients[94];
@@ -3133,42 +2912,42 @@ namespace TFSpreadSheetsNext
                 pTotals[29] = pTotals[28] != 0 ? pTotals[27] / pTotals[28] : 0;
                 pTotals[42] = pTotals[41] != 0 ? pTotals[40] / pTotals[41] : 0;
                 pTotals[81] = pTotals[80] != 0 ? pTotals[79] / pTotals[80] : 0;
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 2, "TOTAL");
+                xlWorkSheet.SetCellValue(RowCounter + 1, 2, "TOTAL");
                 for (int j = 4; j <= 29; j++)
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, j - 1, pTotals[j]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 29, pTotals[86]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 30, pTotals[87]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 31, pTotals[88]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, j - 1, pTotals[j]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 29, pTotals[86]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 30, pTotals[87]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 31, pTotals[88]);
                 for (int j = 30; j <= 42; j++)
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, j + 2, pTotals[j]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 45, pTotals[81]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, j + 2, pTotals[j]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 45, pTotals[81]);
                 if (pTotals[42] < pTotals[81])
-                    xlWorkSheet.SetCellStyle(xlINVCount + 1, 44, mStyles.xlStyleRedFont);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 46, pTotals[80]);
-                xlWorkSheet.SetCellStyle(xlINVCount + 1, 2, xlINVCount + 1, 54, mStyles.xlStyleHeader);
+                    xlWorkSheet.SetCellStyle(RowCounter + 1, 44, mStyles.xlStyleRedFont);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 46, pTotals[80]);
+                xlWorkSheet.SetCellStyle(RowCounter + 1, 2, RowCounter + 1, 54, mStyles.xlStyleHeader);
                 if (pTotals[82] != 0 || pTotals[84] != 0)
                 {
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 47, pTotals[84]);
-                    xlWorkSheet.InsertComment(xlINVCount + 1, 47, pCommentTO);
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 48, pTotals[82]);
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 49, pTotals[85]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 47, pTotals[84]);
+                    xlWorkSheet.InsertComment(RowCounter + 1, 47, pCommentTO);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 48, pTotals[82]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 49, pTotals[85]);
                 }
                 if (pTotals[92] != 0 || pTotals[93] != 0)
                 {
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 51, pTotals[92]);
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 52, pTotals[93]);
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 53, pTotals[94]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 51, pTotals[92]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 52, pTotals[93]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 53, pTotals[94]);
                 }
 
                 // Final formatting
                 mStyles.xlStyleHeader.Fill.SetPatternForegroundColor(System.Drawing.Color.LightGray);
                 mStyles.xlStyleHeader.SetHorizontalAlignment(DocumentFormat.OpenXml.Spreadsheet.HorizontalAlignmentValues.General);
-                xlWorkSheet.SetCellStyle(3, 51, xlINVCount, 54, mStyles.xlStyleHeader);
+                xlWorkSheet.SetCellStyle(3, 51, RowCounter, 54, mStyles.xlStyleHeader);
 
-                xlWorkSheet.SetCellStyle(3, 15, xlINVCount + 1, 15, mStyles.xlStyleDecimalYellow);
-                xlWorkSheet.SetCellStyle(3, 28, xlINVCount + 1, 28, mStyles.xlStyleDecimalYellow);
-                xlWorkSheet.SetCellStyle(3, 29, xlINVCount + 1, 31, mStyles.xlStyleLightGreen);
-                xlWorkSheet.SetCellStyle(3, 44, xlINVCount + 1, 45, mStyles.xlStyleDecimalYellow);
+                xlWorkSheet.SetCellStyle(3, 15, RowCounter + 1, 15, mStyles.xlStyleDecimalYellow);
+                xlWorkSheet.SetCellStyle(3, 28, RowCounter + 1, 28, mStyles.xlStyleDecimalYellow);
+                xlWorkSheet.SetCellStyle(3, 29, RowCounter + 1, 31, mStyles.xlStyleLightGreen);
+                xlWorkSheet.SetCellStyle(3, 44, RowCounter + 1, 45, mStyles.xlStyleDecimalYellow);
 
                 xlWorkSheet.SetColumnStyle(3, 53, mStyles.xlStyleDecimal);
 
@@ -3203,8 +2982,8 @@ namespace TFSpreadSheetsNext
         }
         public string E45_AirTicketSalesAll()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 1;
+
+            RowCounter = 1;
 
             try
             {
@@ -3249,76 +3028,76 @@ namespace TFSpreadSheetsNext
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlINVCount++;
+                    RowCounter++;
 
                     // Main fields (0-10)
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row[0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[7]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToInt32(row[8]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToDateTime(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToInt32(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[10]));
 
 
 
                     // Inv fields (11-14) only if InvNumber != 0
                     if (Convert.ToInt32(row[13]) != 0)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[11]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[12]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToInt32(row[13]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToDateTime(row[14]));
+                        xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[11]));
+                        xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[12]));
+                        xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToInt32(row[13]));
+                        xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDateTime(row[14]));
                     }
 
                     // 15-31
                     for (int j = 15; j <= 31; j++)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[15]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToDecimal(row[16]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row[17]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToInt32(row[20]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[22]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[23]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToString(row[24]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToString(row[25]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToString(row[26]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToDateTime(row[27]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToDateTime(row[28]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToString(row[29]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToString(row[30]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToInt32(row[31]));
+                        xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[15]));
+                        xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToDecimal(row[16]));
+                        xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[17]));
+                        xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19]));
+                        xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToInt32(row[20]));
+                        xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21]));
+                        xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[22]));
+                        xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[23]));
+                        xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToString(row[24]));
+                        xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToString(row[25]));
+                        xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToString(row[26]));
+                        xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToDateTime(row[27]));
+                        xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToDateTime(row[28]));
+                        xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToString(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToString(row[30]));
+                        xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToInt32(row[31]));
 
                     }
 
                     // Cancelled/Cancelled Docs
                     if (Convert.ToInt32(row[31]) == 43)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, "Cancelled");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 129, mStyles.xlStyleItalic);
+                        xlWorkSheet.SetCellValue(RowCounter, 33, "Cancelled");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 129, mStyles.xlStyleItalic);
                     }
                     else if (!string.IsNullOrEmpty(Convert.ToString(row[32])))
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, $"Cancels {Convert.ToString(row[32])}");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 129, mStyles.xlStyleItalic);
+                        xlWorkSheet.SetCellValue(RowCounter, 33, $"Cancels {Convert.ToString(row[32])}");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 129, mStyles.xlStyleItalic);
                     }
 
                     // 33-38
                     for (int j = 33; j <= 38; j++)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToString(row[33]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToString(row[34]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToDecimal(row[35]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToDecimal(row[36]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 38, Convert.ToDecimal(row[37]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToInt32(row[38]));
+                        xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToString(row[33]));
+                        xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToString(row[34]));
+                        xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToDecimal(row[35]));
+                        xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToDecimal(row[36]));
+                        xlWorkSheet.SetCellValue(RowCounter, 38, Convert.ToDecimal(row[37]));
+                        xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToInt32(row[38]));
                     }
 
                     // Custom fields (labels, mandatory, value) 39-126 step 3
@@ -3327,34 +3106,34 @@ namespace TFSpreadSheetsNext
                         bool isEmpty = string.IsNullOrEmpty(Convert.ToString(row[j])) && string.IsNullOrEmpty(Convert.ToString(row[j + 2]));
                         if (isEmpty)
                         {
-                            xlWorkSheet.SetCellStyle(xlINVCount, j + 1, xlINVCount, j + 3, mStyles.xlStyleLightGray);
+                            xlWorkSheet.SetCellStyle(RowCounter, j + 1, RowCounter, j + 3, mStyles.xlStyleLightGray);
                         }
                         else
                         {
                             if (Convert.ToString(row[j + 1]) == "Mandatory")
-                                xlWorkSheet.SetCellStyle(xlINVCount, j + 1, xlINVCount, j + 3, mStyles.xlStyleYellow);
+                                xlWorkSheet.SetCellStyle(RowCounter, j + 1, RowCounter, j + 3, mStyles.xlStyleYellow);
 
-                            xlWorkSheet.SetCellValue(xlINVCount, j + 1, Convert.ToString(row[j]));
-                            xlWorkSheet.SetCellValue(xlINVCount, j + 2, Convert.ToString(row[j + 1]));
-                            xlWorkSheet.SetCellValue(xlINVCount, j + 3, Convert.ToString(row[j + 2]));
+                            xlWorkSheet.SetCellValue(RowCounter, j + 1, Convert.ToString(row[j]));
+                            xlWorkSheet.SetCellValue(RowCounter, j + 2, Convert.ToString(row[j + 1]));
+                            xlWorkSheet.SetCellValue(RowCounter, j + 3, Convert.ToString(row[j + 2]));
                         }
                     }
 
                     // Remaining fields
-                    xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToString(row[33]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToString(row[34]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 130, Convert.ToString(row[129]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 131, Convert.ToString(row[130]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 132, row[131].ToString());
-                    xlWorkSheet.SetCellValue(xlINVCount, 133, Convert.ToString(row[132]));
+                    xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToString(row[33]));
+                    xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToString(row[34]));
+                    xlWorkSheet.SetCellValue(RowCounter, 130, Convert.ToString(row[129]));
+                    xlWorkSheet.SetCellValue(RowCounter, 131, Convert.ToString(row[130]));
+                    xlWorkSheet.SetCellValue(RowCounter, 132, row[131].ToString());
+                    xlWorkSheet.SetCellValue(RowCounter, 133, Convert.ToString(row[132]));
 
                     // Style for Omit/Void/Refund
                     if (!string.IsNullOrEmpty(Convert.ToString(row[3])))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 130, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 130, mStyles.xlStyleSandyBrown);
                     if (!string.IsNullOrEmpty(Convert.ToString(row[4])))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 130, mStyles.xlStyleGrayItalic);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 130, mStyles.xlStyleGrayItalic);
                     if (Convert.ToString(row[10]) == "Refund")
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 130, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 130, mStyles.xlStyleRedFont);
                 }
 
                 xlWorkSheet.AutoFitColumn(1, 133);
@@ -3374,8 +3153,8 @@ namespace TFSpreadSheetsNext
         }
         public string E47_DailyProfitReportTotalsOnly()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 3;
+
+            RowCounter = 3;
 
             try
             {
@@ -3430,22 +3209,22 @@ namespace TFSpreadSheetsNext
                             Convert.ToDecimal(row[41]) != 0 ||
                             Convert.ToDecimal(row[100]) != 0)
                         {
-                            xlINVCount++;
-                            xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[2]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[3]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToDecimal(row[30]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToDecimal(row[31]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToDecimal(row[39]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDecimal(row[40]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDecimal(row[41]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[32]));
-                            xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[100]));
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[2]));
+                            xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[3]));
+                            xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToDecimal(row[30]));
+                            xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToDecimal(row[31]));
+                            xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDecimal(row[39]));
+                            xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDecimal(row[40]));
+                            xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDecimal(row[41]));
+                            xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[32]));
+                            xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[100]));
                             if (Convert.ToDecimal(row[100]) != 0)
                             {
-                                xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[32]) / Convert.ToDecimal(row[100]));
+                                xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[32]) / Convert.ToDecimal(row[100]));
                                 if (Convert.ToDecimal(row[39]) != Convert.ToDecimal(row[32]))
                                 {
-                                    xlWorkSheet.SetCellValue(xlINVCount, 11, $"IW5 difference {(Convert.ToDecimal(row[39]) - Convert.ToDecimal(row[32])):#,##0.00}");
+                                    xlWorkSheet.SetCellValue(RowCounter, 11, $"IW5 difference {(Convert.ToDecimal(row[39]) - Convert.ToDecimal(row[32])):#,##0.00}");
                                 }
                             }
                             pTotals[30] += Convert.ToDecimal(row[30]);
@@ -3459,22 +3238,22 @@ namespace TFSpreadSheetsNext
                     }
                 }
 
-                xlWorkSheet.Sort(4, 1, xlINVCount, 11, 6, false);
-                xlWorkSheet.SetCellStyle(4, 8, xlINVCount, 10, mStyles.xlStyleGrey);
+                xlWorkSheet.Sort(4, 1, RowCounter, 11, 6, false);
+                xlWorkSheet.SetCellStyle(4, 8, RowCounter, 10, mStyles.xlStyleGrey);
 
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 2, "TOTAL");
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 3, pTotals[30]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 4, pTotals[31]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 5, pTotals[39]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 6, pTotals[40]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 7, pTotals[41]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 8, pTotals[32]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 9, pTotals[100]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 2, "TOTAL");
+                xlWorkSheet.SetCellValue(RowCounter + 1, 3, pTotals[30]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 4, pTotals[31]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 5, pTotals[39]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 6, pTotals[40]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 7, pTotals[41]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 8, pTotals[32]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 9, pTotals[100]);
                 if (pTotals[100] != 0)
                 {
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 10, pTotals[32] / pTotals[100]);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 10, pTotals[32] / pTotals[100]);
                 }
-                xlWorkSheet.SetCellStyle(xlINVCount + 1, 2, xlINVCount + 1, 10, mStyles.xlStyleHeader);
+                xlWorkSheet.SetCellStyle(RowCounter + 1, 2, RowCounter + 1, 10, mStyles.xlStyleHeader);
 
                 xlWorkSheet.AutoFitColumn(0, 11);
 
@@ -3488,8 +3267,8 @@ namespace TFSpreadSheetsNext
         }
         public string E48_DailyProfitReportTotalsPerInvoice()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 3;
+
+            RowCounter = 3;
 
             try
             {
@@ -3537,27 +3316,27 @@ namespace TFSpreadSheetsNext
                 for (int ii = 0; ii < mdsDataSet.Tables[0].Rows.Count; ii++)
                 {
                     var row = mdsDataSet.Tables[0].Rows[ii];
-                    xlINVCount++;
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[4]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToDateTime(row[6]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToInt32(row[7]));
+                    RowCounter++;
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDateTime(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToInt32(row[7]));
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDecimal(row[34]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[35]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[43]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[44]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDecimal(row[45]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDecimal(row[34]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[35]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[43]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[44]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[45]));
                     if (Convert.ToDecimal(row[36]) != 0)
-                        xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDecimal(row[36]));
+                        xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[36]));
                     if (Convert.ToDecimal(row[52]) != 0)
-                        xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToDecimal(row[52]));
+                        xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDecimal(row[52]));
                     if (Convert.ToDecimal(row[52]) != 0)
-                        xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToDecimal(row[36]) / Convert.ToDecimal(row[52]));
+                        xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDecimal(row[36]) / Convert.ToDecimal(row[52]));
                     if (Convert.ToDecimal(row[43]) != Convert.ToDecimal(row[36]))
-                        xlWorkSheet.SetCellValue(xlINVCount, 15, $"IW5 difference {Convert.ToDecimal(row[43]) - Convert.ToDecimal(row[36]):#,##0.00}");
+                        xlWorkSheet.SetCellValue(RowCounter, 15, $"IW5 difference {Convert.ToDecimal(row[43]) - Convert.ToDecimal(row[36]):#,##0.00}");
 
                     pTotals[34] += Convert.ToDecimal(row[34]);
                     pTotals[35] += Convert.ToDecimal(row[35]);
@@ -3568,25 +3347,25 @@ namespace TFSpreadSheetsNext
                     pTotals[52] += Convert.ToDecimal(row[52]);
 
                     if (Convert.ToInt32(row[7]) == 1)
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 14, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 14, mStyles.xlStyleSandyBrown);
                 }
 
-                xlWorkSheet.Sort(4, 1, xlINVCount, 15, 4, true);
-                xlWorkSheet.Sort(4, 1, xlINVCount, 15, 3, true);
-                xlWorkSheet.Sort(4, 1, xlINVCount, 15, 1, true);
-                xlWorkSheet.SetCellStyle(4, 12, xlINVCount, 15, mStyles.xlStyleGrey);
+                xlWorkSheet.Sort(4, 1, RowCounter, 15, 4, true);
+                xlWorkSheet.Sort(4, 1, RowCounter, 15, 3, true);
+                xlWorkSheet.Sort(4, 1, RowCounter, 15, 1, true);
+                xlWorkSheet.SetCellStyle(4, 12, RowCounter, 15, mStyles.xlStyleGrey);
 
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 2, "TOTAL");
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 7, pTotals[34]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 8, pTotals[35]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 9, pTotals[43]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 10, pTotals[44]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 11, pTotals[45]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 12, pTotals[36]);
-                xlWorkSheet.SetCellValue(xlINVCount + 1, 13, pTotals[52]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 2, "TOTAL");
+                xlWorkSheet.SetCellValue(RowCounter + 1, 7, pTotals[34]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 8, pTotals[35]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 9, pTotals[43]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 10, pTotals[44]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 11, pTotals[45]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 12, pTotals[36]);
+                xlWorkSheet.SetCellValue(RowCounter + 1, 13, pTotals[52]);
                 if (pTotals[52] != 0)
-                    xlWorkSheet.SetCellValue(xlINVCount + 1, 14, pTotals[36] / pTotals[52]);
-                xlWorkSheet.SetCellStyle(xlINVCount + 1, 2, xlINVCount + 1, 14, mStyles.xlStyleHeader);
+                    xlWorkSheet.SetCellValue(RowCounter + 1, 14, pTotals[36] / pTotals[52]);
+                xlWorkSheet.SetCellStyle(RowCounter + 1, 2, RowCounter + 1, 14, mStyles.xlStyleHeader);
 
                 xlWorkSheet.AutoFitColumn(0, 15);
 
@@ -3600,8 +3379,8 @@ namespace TFSpreadSheetsNext
         }
         public string E51_Daily_Profit_Totals_per_Category()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -3663,7 +3442,7 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.SetCellStyle(1, 1, 5, 59, mStyles.xlStyleHeader);
 
-                xlINVCount = 5;
+                RowCounter = 5;
                 decimal[] Totals = new decimal[60];
                 decimal[] TotClientGroup = new decimal[60];
                 int TotsLevel;
@@ -3691,59 +3470,59 @@ namespace TFSpreadSheetsNext
                         {
                             if (!string.IsNullOrEmpty(PrevClientGroup))
                             {
-                                xlINVCount++;
-                                xlWorkSheet.SetCellValue(xlINVCount, 2, PrevClientGroup);
+                                RowCounter++;
+                                xlWorkSheet.SetCellValue(RowCounter, 2, PrevClientGroup);
                                 for (int j = 5; j <= 59; j++)
                                 {
-                                    xlWorkSheet.SetCellValue(xlINVCount, j, TotClientGroup[j]);
+                                    xlWorkSheet.SetCellValue(RowCounter, j, TotClientGroup[j]);
                                     TotClientGroup[j] = 0;
                                 }
                             }
                             xlWorkSheet.GroupRows(FirstGroupRow, LastGroupRow);
                             xlWorkSheet.CollapseRows(LastGroupRow + 1);
-                            FirstGroupRow = xlINVCount + 1;
+                            FirstGroupRow = RowCounter + 1;
                         }
-                        xlINVCount++;
-                        LastGroupRow = xlINVCount;
+                        RowCounter++;
+                        LastGroupRow = RowCounter;
                         if (TotsLevel == 2)
                         {
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 59, mStyles.xlStyleGrayItalic);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 59, mStyles.xlStyleGrayItalic);
                         }
-                        xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToInt32(row[0]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[3]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[4]));
+                        xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToInt32(row[0]));
+                        xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1]));
+                        xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[3]));
+                        xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[4]));
                         // Total
-                        xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToDecimal(row[5]) + Convert.ToDecimal(row[18]) + Convert.ToDecimal(row[86]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDecimal(row[6]) + Convert.ToDecimal(row[19]) + Convert.ToDecimal(row[87]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToDecimal(row[15]) + Convert.ToDecimal(row[28]) + Convert.ToDecimal(row[88]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDecimal(row[16]) + Convert.ToDecimal(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDecimal(row[5]) + Convert.ToDecimal(row[18]) + Convert.ToDecimal(row[86]));
+                        xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDecimal(row[6]) + Convert.ToDecimal(row[19]) + Convert.ToDecimal(row[87]));
+                        xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToDecimal(row[15]) + Convert.ToDecimal(row[28]) + Convert.ToDecimal(row[88]));
+                        xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDecimal(row[16]) + Convert.ToDecimal(row[29]));
 
                         // AIR
-                        xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToDecimal(row[5]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDecimal(row[6]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDecimal(row[15]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDecimal(row[16]));
+                        xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[5]));
+                        xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[6]));
+                        xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[15]));
+                        xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[16]));
 
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 13, Convert.ToDecimal(row[5]));
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 14, Convert.ToDecimal(row[6]));
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 15, Convert.ToDecimal(row[15]));
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 16, Convert.ToDecimal(row[16]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 13, Convert.ToDecimal(row[5]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 14, Convert.ToDecimal(row[6]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 15, Convert.ToDecimal(row[15]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 16, Convert.ToDecimal(row[16]));
                         // Services
-                        xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToDecimal(row[18]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToDecimal(row[19]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToDecimal(row[28]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToDecimal(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDecimal(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDecimal(row[19]));
+                        xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDecimal(row[28]));
+                        xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToDecimal(row[29]));
 
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 33, Convert.ToDecimal(row[18]));
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 34, Convert.ToDecimal(row[19]));
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 35, Convert.ToDecimal(row[28]));
-                        xlWorkSheet.SetCellValue(xlINVCount, Category * 4 + 36, Convert.ToDecimal(row[29]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 33, Convert.ToDecimal(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 34, Convert.ToDecimal(row[19]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 35, Convert.ToDecimal(row[28]));
+                        xlWorkSheet.SetCellValue(RowCounter, Category * 4 + 36, Convert.ToDecimal(row[29]));
 
                         // RINVA
-                        xlWorkSheet.SetCellValue(xlINVCount, 57, Convert.ToDecimal(row[86]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 58, Convert.ToDecimal(row[87]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 59, Convert.ToDecimal(row[88]));
+                        xlWorkSheet.SetCellValue(RowCounter, 57, Convert.ToDecimal(row[86]));
+                        xlWorkSheet.SetCellValue(RowCounter, 58, Convert.ToDecimal(row[87]));
+                        xlWorkSheet.SetCellValue(RowCounter, 59, Convert.ToDecimal(row[88]));
 
                         // TOTALS
                         Totals[5] += Convert.ToDecimal(row[5]) + Convert.ToDecimal(row[18]) + Convert.ToDecimal(row[86]);
@@ -3807,11 +3586,11 @@ namespace TFSpreadSheetsNext
                         }
                     }
                 }
-                xlINVCount++;
-                xlWorkSheet.SetCellValue(xlINVCount, 2, PrevClientGroup);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 2, PrevClientGroup);
                 for (int j = 5; j <= 59; j++)
                 {
-                    xlWorkSheet.SetCellValue(xlINVCount, j, TotClientGroup[j]);
+                    xlWorkSheet.SetCellValue(RowCounter, j, TotClientGroup[j]);
                     TotClientGroup[j] = 0;
                 }
                 xlWorkSheet.GroupRows(FirstGroupRow, LastGroupRow);
@@ -3822,23 +3601,23 @@ namespace TFSpreadSheetsNext
                     xlWorkSheet.SetCellValue(3, i, Totals[i]);
                 }
 
-                xlWorkSheet.SetCellStyle(1, 5, xlINVCount, 8, mStyles.xlStyleLightSteelBlue);
-                xlWorkSheet.SetCellStyle(1, 9, xlINVCount, 12, mStyles.xlStyleHoneyDew);
-                xlWorkSheet.SetCellStyle(1, 13, xlINVCount, 16, mStyles.xlStyleLemonChiffon);
-                xlWorkSheet.SetCellStyle(1, 17, xlINVCount, 20, mStyles.xlStyleHoneyDew);
-                xlWorkSheet.SetCellStyle(1, 21, xlINVCount, 24, mStyles.xlStyleLightGreen);
-                xlWorkSheet.SetCellStyle(1, 25, xlINVCount, 28, mStyles.xlStyleHoneyDew);
-                xlWorkSheet.SetCellStyle(1, 29, xlINVCount, 32, mStyles.xlStyleLightGreen);
-                xlWorkSheet.SetCellStyle(1, 33, xlINVCount, 36, mStyles.xlStyleHoneyDew);
-                xlWorkSheet.SetCellStyle(1, 37, xlINVCount, 40, mStyles.xlStyleLemonChiffon);
-                xlWorkSheet.SetCellStyle(1, 41, xlINVCount, 44, mStyles.xlStyleKhaki);
-                xlWorkSheet.SetCellStyle(1, 45, xlINVCount, 48, mStyles.xlStyleLemonChiffon);
-                xlWorkSheet.SetCellStyle(1, 49, xlINVCount, 52, mStyles.xlStyleKhaki);
-                xlWorkSheet.SetCellStyle(1, 53, xlINVCount, 56, mStyles.xlStyleLemonChiffon);
-                xlWorkSheet.SetCellStyle(1, 57, xlINVCount, 59, mStyles.xlStyleKhaki);
+                xlWorkSheet.SetCellStyle(1, 5, RowCounter, 8, mStyles.xlStyleLightSteelBlue);
+                xlWorkSheet.SetCellStyle(1, 9, RowCounter, 12, mStyles.xlStyleHoneyDew);
+                xlWorkSheet.SetCellStyle(1, 13, RowCounter, 16, mStyles.xlStyleLemonChiffon);
+                xlWorkSheet.SetCellStyle(1, 17, RowCounter, 20, mStyles.xlStyleHoneyDew);
+                xlWorkSheet.SetCellStyle(1, 21, RowCounter, 24, mStyles.xlStyleLightGreen);
+                xlWorkSheet.SetCellStyle(1, 25, RowCounter, 28, mStyles.xlStyleHoneyDew);
+                xlWorkSheet.SetCellStyle(1, 29, RowCounter, 32, mStyles.xlStyleLightGreen);
+                xlWorkSheet.SetCellStyle(1, 33, RowCounter, 36, mStyles.xlStyleHoneyDew);
+                xlWorkSheet.SetCellStyle(1, 37, RowCounter, 40, mStyles.xlStyleLemonChiffon);
+                xlWorkSheet.SetCellStyle(1, 41, RowCounter, 44, mStyles.xlStyleKhaki);
+                xlWorkSheet.SetCellStyle(1, 45, RowCounter, 48, mStyles.xlStyleLemonChiffon);
+                xlWorkSheet.SetCellStyle(1, 49, RowCounter, 52, mStyles.xlStyleKhaki);
+                xlWorkSheet.SetCellStyle(1, 53, RowCounter, 56, mStyles.xlStyleLemonChiffon);
+                xlWorkSheet.SetCellStyle(1, 57, RowCounter, 59, mStyles.xlStyleKhaki);
 
-                xlWorkSheet.DrawBorderGrid(1, 5, xlINVCount, 59, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin);
-                xlWorkSheet.DrawBorderGrid(5, 1, xlINVCount, 4, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin);
+                xlWorkSheet.DrawBorderGrid(1, 5, RowCounter, 59, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin);
+                xlWorkSheet.DrawBorderGrid(5, 1, RowCounter, 4, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thin);
                 xlWorkSheet.AutoFitColumn(1, 59);
 
                 xlWorkSheet.AddWorksheet("Summary");
@@ -3937,8 +3716,8 @@ namespace TFSpreadSheetsNext
         }
         public string E53_SeaChefs_InvoicesByDepartureDate()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int rowCounter = 0;
+
+            RowCounter = 0;
 
             string client = "";
             string clientName = "";
@@ -3957,7 +3736,7 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.SetColumnStyle(9, 13, mStyles.xlStyleDecimal);
                 xlWorkSheet.SetColumnStyle(4, mStyles.xlStyleDate);
 
-                rowCounter = 1;
+                RowCounter = 1;
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
@@ -3966,121 +3745,121 @@ namespace TFSpreadSheetsNext
                     clientName = row[1] == DBNull.Value ? string.Empty : row[1]?.ToString() ?? string.Empty;
                     vessel = row[2] == DBNull.Value ? string.Empty : row[2]?.ToString() ?? string.Empty;
                     cc = row[3] == DBNull.Value ? string.Empty : row[3]?.ToString() ?? string.Empty;
-                    if (rowCounter == 1 || client != prevClient || vessel != prevVessel || cc != prevCC)
+                    if (RowCounter == 1 || client != prevClient || vessel != prevVessel || cc != prevCC)
                     {
-                        if (rowCounter > 1)
+                        if (RowCounter > 1)
                         {
                             // CC Total
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 7, prevCC);
-                            xlWorkSheet.SetCellValue(rowCounter, 8, "SUBTOTALS:");
-                            xlWorkSheet.SetCellValue(rowCounter, 9, totals[0, 0]);
-                            xlWorkSheet.SetCellValue(rowCounter, 10, totals[0, 1]);
-                            xlWorkSheet.SetCellValue(rowCounter, 11, totals[0, 2]);
-                            xlWorkSheet.SetCellValue(rowCounter, 12, totals[0, 3]);
-                            xlWorkSheet.SetCellValue(rowCounter, 13, totals[0, 4]);
-                            xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 7, prevCC);
+                            xlWorkSheet.SetCellValue(RowCounter, 8, "SUBTOTALS:");
+                            xlWorkSheet.SetCellValue(RowCounter, 9, totals[0, 0]);
+                            xlWorkSheet.SetCellValue(RowCounter, 10, totals[0, 1]);
+                            xlWorkSheet.SetCellValue(RowCounter, 11, totals[0, 2]);
+                            xlWorkSheet.SetCellValue(RowCounter, 12, totals[0, 3]);
+                            xlWorkSheet.SetCellValue(RowCounter, 13, totals[0, 4]);
+                            xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
                             for (int t = 0; t < 5; t++) totals[0, t] = 0;
 
                             if (client != prevClient || vessel != prevVessel)
                             {
                                 // Vessel Total
-                                rowCounter++;
-                                xlWorkSheet.SetCellValue(rowCounter, 7, prevVessel);
-                                xlWorkSheet.SetCellValue(rowCounter, 8, "SUBTOTALS:");
-                                xlWorkSheet.SetCellValue(rowCounter, 9, totals[1, 0]);
-                                xlWorkSheet.SetCellValue(rowCounter, 10, totals[1, 1]);
-                                xlWorkSheet.SetCellValue(rowCounter, 11, totals[1, 2]);
-                                xlWorkSheet.SetCellValue(rowCounter, 12, totals[1, 3]);
-                                xlWorkSheet.SetCellValue(rowCounter, 13, totals[1, 4]);
-                                xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                                RowCounter++;
+                                xlWorkSheet.SetCellValue(RowCounter, 7, prevVessel);
+                                xlWorkSheet.SetCellValue(RowCounter, 8, "SUBTOTALS:");
+                                xlWorkSheet.SetCellValue(RowCounter, 9, totals[1, 0]);
+                                xlWorkSheet.SetCellValue(RowCounter, 10, totals[1, 1]);
+                                xlWorkSheet.SetCellValue(RowCounter, 11, totals[1, 2]);
+                                xlWorkSheet.SetCellValue(RowCounter, 12, totals[1, 3]);
+                                xlWorkSheet.SetCellValue(RowCounter, 13, totals[1, 4]);
+                                xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
                                 for (int t = 0; t < 5; t++) totals[1, t] = 0;
                             }
                             if (client != prevClient)
                             {
                                 // Client Total
-                                rowCounter++;
-                                xlWorkSheet.SetCellValue(rowCounter, 7, prevClient);
-                                xlWorkSheet.SetCellValue(rowCounter, 8, "SUBTOTALS:");
-                                xlWorkSheet.SetCellValue(rowCounter, 9, totals[2, 0]);
-                                xlWorkSheet.SetCellValue(rowCounter, 10, totals[2, 1]);
-                                xlWorkSheet.SetCellValue(rowCounter, 11, totals[2, 2]);
-                                xlWorkSheet.SetCellValue(rowCounter, 12, totals[2, 3]);
-                                xlWorkSheet.SetCellValue(rowCounter, 13, totals[2, 4]);
-                                xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                                RowCounter++;
+                                xlWorkSheet.SetCellValue(RowCounter, 7, prevClient);
+                                xlWorkSheet.SetCellValue(RowCounter, 8, "SUBTOTALS:");
+                                xlWorkSheet.SetCellValue(RowCounter, 9, totals[2, 0]);
+                                xlWorkSheet.SetCellValue(RowCounter, 10, totals[2, 1]);
+                                xlWorkSheet.SetCellValue(RowCounter, 11, totals[2, 2]);
+                                xlWorkSheet.SetCellValue(RowCounter, 12, totals[2, 3]);
+                                xlWorkSheet.SetCellValue(RowCounter, 13, totals[2, 4]);
+                                xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
                                 for (int t = 0; t < 5; t++) totals[2, t] = 0;
                             }
                         }
-                        if (rowCounter == 1 || client != prevClient)
+                        if (RowCounter == 1 || client != prevClient)
                         {
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Period:({mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy})");
-                            xlWorkSheet.MergeWorksheetCells(rowCounter, 1, rowCounter, 18);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, mStyles.xlStyleBisque);
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, "Currency");
-                            xlWorkSheet.SetCellValue(rowCounter, 2, Convert.ToString(row[7]));
-                            xlWorkSheet.SetCellValue(rowCounter, 3, "Account");
-                            xlWorkSheet.SetCellValue(rowCounter, 4, client);
-                            xlWorkSheet.SetCellValue(rowCounter, 5, clientName);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, 5, mStyles.xlStyleBold);
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, "Project");
-                            xlWorkSheet.SetCellValue(rowCounter, 2, "Cost Center");
-                            xlWorkSheet.SetCellValue(rowCounter, 3, "Invoice");
-                            xlWorkSheet.SetCellValue(rowCounter, 4, "Dep Date");
-                            xlWorkSheet.SetCellValue(rowCounter, 5, "AL");
-                            xlWorkSheet.SetCellValue(rowCounter, 6, "Traveller");
-                            xlWorkSheet.SetCellValue(rowCounter, 7, "TKT No");
-                            xlWorkSheet.SetCellValue(rowCounter, 8, "Routing");
-                            xlWorkSheet.SetCellValue(rowCounter, 9, "Fare");
-                            xlWorkSheet.SetCellValue(rowCounter, 10, "Taxes");
-                            xlWorkSheet.SetCellValue(rowCounter, 11, "Canc Fee");
-                            xlWorkSheet.SetCellValue(rowCounter, 12, "Discount");
-                            xlWorkSheet.SetCellValue(rowCounter, 13, "Payable");
-                            xlWorkSheet.SetCellValue(rowCounter, 14, "Trip ID");
-                            xlWorkSheet.SetCellValue(rowCounter, 15, "Order by");
-                            xlWorkSheet.SetCellValue(rowCounter, 16, "Invoice Ref.");
-                            xlWorkSheet.SetCellValue(rowCounter, 17, "Reason For travel");
-                            xlWorkSheet.SetCellValue(rowCounter, 18, "Passenger ID");
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, 18, mStyles.xlStyleBisqueWithBorder);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Period:({mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy})");
+                            xlWorkSheet.MergeWorksheetCells(RowCounter, 1, RowCounter, 18);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, mStyles.xlStyleBisque);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, "Currency");
+                            xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[7]));
+                            xlWorkSheet.SetCellValue(RowCounter, 3, "Account");
+                            xlWorkSheet.SetCellValue(RowCounter, 4, client);
+                            xlWorkSheet.SetCellValue(RowCounter, 5, clientName);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 5, mStyles.xlStyleBold);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, "Project");
+                            xlWorkSheet.SetCellValue(RowCounter, 2, "Cost Center");
+                            xlWorkSheet.SetCellValue(RowCounter, 3, "Invoice");
+                            xlWorkSheet.SetCellValue(RowCounter, 4, "Dep Date");
+                            xlWorkSheet.SetCellValue(RowCounter, 5, "AL");
+                            xlWorkSheet.SetCellValue(RowCounter, 6, "Traveller");
+                            xlWorkSheet.SetCellValue(RowCounter, 7, "TKT No");
+                            xlWorkSheet.SetCellValue(RowCounter, 8, "Routing");
+                            xlWorkSheet.SetCellValue(RowCounter, 9, "Fare");
+                            xlWorkSheet.SetCellValue(RowCounter, 10, "Taxes");
+                            xlWorkSheet.SetCellValue(RowCounter, 11, "Canc Fee");
+                            xlWorkSheet.SetCellValue(RowCounter, 12, "Discount");
+                            xlWorkSheet.SetCellValue(RowCounter, 13, "Payable");
+                            xlWorkSheet.SetCellValue(RowCounter, 14, "Trip ID");
+                            xlWorkSheet.SetCellValue(RowCounter, 15, "Order by");
+                            xlWorkSheet.SetCellValue(RowCounter, 16, "Invoice Ref.");
+                            xlWorkSheet.SetCellValue(RowCounter, 17, "Reason For travel");
+                            xlWorkSheet.SetCellValue(RowCounter, 18, "Passenger ID");
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 18, mStyles.xlStyleBisqueWithBorder);
                         }
                         if (prevClient != client || prevVessel != vessel)
                         {
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, vessel);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, 1, mStyles.xlStyleBold);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, vessel);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 1, mStyles.xlStyleBold);
                         }
                         if (prevClient != client || prevVessel != vessel || prevCC != cc)
                         {
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, cc);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, 1, mStyles.xlStyleBold);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, cc);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 1, mStyles.xlStyleBold);
                         }
 
                         prevClient = client;
                         prevVessel = vessel;
                         prevCC = cc;
                     }
-                    rowCounter++;
-                    xlWorkSheet.SetCellValue(rowCounter, 1, Convert.ToString(row[2]));
-                    xlWorkSheet.SetCellValue(rowCounter, 2, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(rowCounter, 3, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(rowCounter, 4, Convert.ToDateTime(row[8]));
-                    xlWorkSheet.SetCellValue(rowCounter, 5, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(rowCounter, 6, Convert.ToString(row[10]));
-                    xlWorkSheet.SetCellValue(rowCounter, 7, Convert.ToString(row[11]));
-                    xlWorkSheet.SetCellValue(rowCounter, 8, Convert.ToString(row[12]));
-                    xlWorkSheet.SetCellValue(rowCounter, 9, Convert.ToDecimal(row[13]));
-                    xlWorkSheet.SetCellValue(rowCounter, 10, Convert.ToDecimal(row[14]));
-                    xlWorkSheet.SetCellValue(rowCounter, 11, Convert.ToDecimal(row[15]));
-                    xlWorkSheet.SetCellValue(rowCounter, 12, Convert.ToDecimal(row[16]));
-                    xlWorkSheet.SetCellValue(rowCounter, 13, Convert.ToDecimal(row[17]));
-                    xlWorkSheet.SetCellValue(rowCounter, 14, Convert.ToString(row[18]));
-                    xlWorkSheet.SetCellValue(rowCounter, 15, Convert.ToString(row[19]));
-                    xlWorkSheet.SetCellValue(rowCounter, 16, "");
-                    xlWorkSheet.SetCellValue(rowCounter, 17, Convert.ToString(row[20]));
-                    xlWorkSheet.SetCellValue(rowCounter, 18, Convert.ToString(row[21]));
+                    RowCounter++;
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToDateTime(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToDecimal(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[15]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[16]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDecimal(row[17]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[18]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row[19]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, "");
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[20]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[21]));
                     for (int iTot = 0; iTot < 4; iTot++)
                     {
                         totals[iTot, 0] += Convert.ToDecimal(row[13]);
@@ -4091,47 +3870,47 @@ namespace TFSpreadSheetsNext
                     }
                 }
                 // CC Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 7, prevCC);
-                xlWorkSheet.SetCellValue(rowCounter, 8, "SUBTOTALS:");
-                xlWorkSheet.SetCellValue(rowCounter, 9, totals[0, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[0, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[0, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[0, 3]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[0, 4]);
-                xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 7, prevCC);
+                xlWorkSheet.SetCellValue(RowCounter, 8, "SUBTOTALS:");
+                xlWorkSheet.SetCellValue(RowCounter, 9, totals[0, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[0, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[0, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[0, 3]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[0, 4]);
+                xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
 
                 // Vessel Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 7, prevVessel);
-                xlWorkSheet.SetCellValue(rowCounter, 8, "SUBTOTALS:");
-                xlWorkSheet.SetCellValue(rowCounter, 9, totals[1, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[1, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[1, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[1, 3]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[1, 4]);
-                xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 7, prevVessel);
+                xlWorkSheet.SetCellValue(RowCounter, 8, "SUBTOTALS:");
+                xlWorkSheet.SetCellValue(RowCounter, 9, totals[1, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[1, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[1, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[1, 3]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[1, 4]);
+                xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
 
                 // Client Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 7, prevClient);
-                xlWorkSheet.SetCellValue(rowCounter, 8, "SUBTOTALS:");
-                xlWorkSheet.SetCellValue(rowCounter, 9, totals[2, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[2, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[2, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[2, 3]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[2, 4]);
-                xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 7, prevClient);
+                xlWorkSheet.SetCellValue(RowCounter, 8, "SUBTOTALS:");
+                xlWorkSheet.SetCellValue(RowCounter, 9, totals[2, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[2, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[2, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[2, 3]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[2, 4]);
+                xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
 
                 // Grand Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 8, "TOTALS:");
-                xlWorkSheet.SetCellValue(rowCounter, 9, totals[3, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[3, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[3, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[3, 3]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[3, 4]);
-                xlWorkSheet.SetCellStyle(rowCounter, 7, rowCounter, 13, mStyles.xlStyleBold);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 8, "TOTALS:");
+                xlWorkSheet.SetCellValue(RowCounter, 9, totals[3, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[3, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[3, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[3, 3]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[3, 4]);
+                xlWorkSheet.SetCellStyle(RowCounter, 7, RowCounter, 13, mStyles.xlStyleBold);
 
                 xlWorkSheet.AutoFitColumn(1, 18);
 
@@ -4145,8 +3924,8 @@ namespace TFSpreadSheetsNext
         }
         public string E54_Client_Statement()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int rowCounter = 2;
+
+            RowCounter = 2;
 
             string client = "";
             string clientName = "";
@@ -4175,10 +3954,10 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.SetColumnStyle(2, mStyles.xlStyleDate);
                 xlWorkSheet.SetColumnStyle(8, mStyles.xlStyleDate);
 
-                xlWorkSheet.SetCellValue(rowCounter, 1, "ATPI Greece Travel Marine S.A. ,31-33 Athinon Avenue, 104 47 Athens, Greece");
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, "ATPI Ελλάς - Ταξειδιωτική Ναυτιλιακή Α.Ε., Λ.Αθηνών 31-33, 104 47, Αθήνα-ΑΦΜ 094333389 ΦΑΕ Αθηνών");
-                rowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, CompanyNameEnglish);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, CompanyNameGreek);
+                RowCounter++;
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
@@ -4187,96 +3966,96 @@ namespace TFSpreadSheetsNext
                     clientName = row[1] == DBNull.Value ? string.Empty : row[1]?.ToString() ?? string.Empty;
                     vessel = row[5] == DBNull.Value ? string.Empty : row[5]?.ToString() ?? string.Empty;
 
-                    if (rowCounter == 4 || client != prevClient || vessel != prevVessel)
+                    if (RowCounter == 4 || client != prevClient || vessel != prevVessel)
                     {
-                        if (rowCounter > 4)
+                        if (RowCounter > 4)
                         {
                             // Vessel Total
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Total for Vessel {prevVessel}:");
-                            xlWorkSheet.SetCellValue(rowCounter, 10, totals[0, 0]);
-                            xlWorkSheet.SetCellValue(rowCounter, 11, totals[0, 1]);
-                            xlWorkSheet.SetCellValue(rowCounter, 12, totals[0, 2]);
-                            xlWorkSheet.SetCellValue(rowCounter, 13, totals[0, 3]);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlBoldWithBorder);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Total for Vessel {prevVessel}:");
+                            xlWorkSheet.SetCellValue(RowCounter, 10, totals[0, 0]);
+                            xlWorkSheet.SetCellValue(RowCounter, 11, totals[0, 1]);
+                            xlWorkSheet.SetCellValue(RowCounter, 12, totals[0, 2]);
+                            xlWorkSheet.SetCellValue(RowCounter, 13, totals[0, 3]);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlBoldWithBorder);
                             totals[0, 0] = totals[0, 1] = totals[0, 2] = totals[0, 3] = 0;
 
                             if (client != prevClient)
                             {
                                 // Client Total
-                                rowCounter++;
-                                xlWorkSheet.SetCellValue(rowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
-                                xlWorkSheet.SetCellValue(rowCounter, 10, totals[1, 0]);
-                                xlWorkSheet.SetCellValue(rowCounter, 11, totals[1, 1]);
-                                xlWorkSheet.SetCellValue(rowCounter, 12, totals[1, 2]);
-                                xlWorkSheet.SetCellValue(rowCounter, 13, totals[1, 3]);
-                                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlBoldWithBorder);
+                                RowCounter++;
+                                xlWorkSheet.SetCellValue(RowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
+                                xlWorkSheet.SetCellValue(RowCounter, 10, totals[1, 0]);
+                                xlWorkSheet.SetCellValue(RowCounter, 11, totals[1, 1]);
+                                xlWorkSheet.SetCellValue(RowCounter, 12, totals[1, 2]);
+                                xlWorkSheet.SetCellValue(RowCounter, 13, totals[1, 3]);
+                                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlBoldWithBorder);
                                 totals[1, 0] = totals[1, 1] = totals[1, 2] = totals[1, 3] = 0;
                             }
                         }
-                        if (rowCounter == 1 || client != prevClient)
+                        if (RowCounter == 1 || client != prevClient)
                         {
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Statement Period:({mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy})");
-                            xlWorkSheet.MergeWorksheetCells(rowCounter, 1, rowCounter, numCols);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, mStyles.xlStyleBisque);
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Client: {client} {clientName}");
-                            xlWorkSheet.SetCellValue(rowCounter, 13, Convert.ToString(row[2]));
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, 5, mStyles.xlBoldWithBorder);
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, "P-T Number");
-                            xlWorkSheet.SetCellValue(rowCounter, 2, "Inv. Date");
-                            xlWorkSheet.SetCellValue(rowCounter, 3, "Vessel");
-                            xlWorkSheet.SetCellValue(rowCounter, 4, "Description");
-                            xlWorkSheet.SetCellValue(rowCounter, 5, "Pax");
-                            xlWorkSheet.SetCellValue(rowCounter, 6, "A/L");
-                            xlWorkSheet.SetCellValue(rowCounter, 7, "Routing");
-                            xlWorkSheet.SetCellValue(rowCounter, 8, "Flight Date");
-                            xlWorkSheet.SetCellValue(rowCounter, 9, "ReasonForTravel");
-                            xlWorkSheet.SetCellValue(rowCounter, 10, "Taxes");
-                            xlWorkSheet.SetCellValue(rowCounter, 11, "Face Value");
-                            xlWorkSheet.SetCellValue(rowCounter, 12, "Discount");
-                            xlWorkSheet.SetCellValue(rowCounter, 13, "Net Payable");
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Statement Period:({mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy})");
+                            xlWorkSheet.MergeWorksheetCells(RowCounter, 1, RowCounter, numCols);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, mStyles.xlStyleBisque);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Client: {client} {clientName}");
+                            xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[2]));
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 5, mStyles.xlBoldWithBorder);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, "P-T Number");
+                            xlWorkSheet.SetCellValue(RowCounter, 2, "Inv. Date");
+                            xlWorkSheet.SetCellValue(RowCounter, 3, "Vessel");
+                            xlWorkSheet.SetCellValue(RowCounter, 4, "Description");
+                            xlWorkSheet.SetCellValue(RowCounter, 5, "Pax");
+                            xlWorkSheet.SetCellValue(RowCounter, 6, "A/L");
+                            xlWorkSheet.SetCellValue(RowCounter, 7, "Routing");
+                            xlWorkSheet.SetCellValue(RowCounter, 8, "Flight Date");
+                            xlWorkSheet.SetCellValue(RowCounter, 9, "ReasonForTravel");
+                            xlWorkSheet.SetCellValue(RowCounter, 10, "Taxes");
+                            xlWorkSheet.SetCellValue(RowCounter, 11, "Face Value");
+                            xlWorkSheet.SetCellValue(RowCounter, 12, "Discount");
+                            xlWorkSheet.SetCellValue(RowCounter, 13, "Net Payable");
                             if (mobjReports.BooleanOption1)
                             {
-                                xlWorkSheet.SetCellValue(rowCounter, 14, "OMIT");
-                                xlWorkSheet.SetCellValue(rowCounter, 15, "ConnectedDocument");
-                                xlWorkSheet.SetCellValue(rowCounter, 16, "ConnectedDoc.Amount");
+                                xlWorkSheet.SetCellValue(RowCounter, 14, "OMIT");
+                                xlWorkSheet.SetCellValue(RowCounter, 15, "ConnectedDocument");
+                                xlWorkSheet.SetCellValue(RowCounter, 16, "ConnectedDoc.Amount");
                             }
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlStyleBisqueWithBorder);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlStyleBisqueWithBorder);
                         }
                         if (prevClient != client || prevVessel != vessel)
                         {
-                            rowCounter++;
+                            RowCounter++;
                         }
                         prevClient = client;
                         prevClientName = clientName;
                         prevVessel = vessel;
                     }
-                    rowCounter++;
-                    xlWorkSheet.SetCellValue(rowCounter, 1, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(rowCounter, 2, Convert.ToDateTime(row[4]));
-                    xlWorkSheet.SetCellValue(rowCounter, 3, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(rowCounter, 4, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(rowCounter, 5, Convert.ToInt32(row[7]));
-                    xlWorkSheet.SetCellValue(rowCounter, 6, Convert.ToString(row[8]));
-                    xlWorkSheet.SetCellValue(rowCounter, 7, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(rowCounter, 8, Convert.ToDateTime(row[10]));
-                    xlWorkSheet.SetCellValue(rowCounter, 9, Convert.ToString(row[11]));
-                    xlWorkSheet.SetCellValue(rowCounter, 10, Convert.ToDecimal(row[12]));
-                    xlWorkSheet.SetCellValue(rowCounter, 11, Convert.ToDecimal(row[13]));
-                    xlWorkSheet.SetCellValue(rowCounter, 12, Convert.ToDecimal(row[14]));
-                    xlWorkSheet.SetCellValue(rowCounter, 13, Convert.ToDecimal(row[15]));
+                    RowCounter++;
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToDateTime(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToInt32(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToDateTime(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDecimal(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDecimal(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToDecimal(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDecimal(row[15]));
                     if (mobjReports.BooleanOption1)
                     {
                         if (Convert.ToBoolean(row[16]))
                         {
-                            xlWorkSheet.SetCellValue(rowCounter, 14, "OMIT");
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlStyleSandyBrown);
+                            xlWorkSheet.SetCellValue(RowCounter, 14, "OMIT");
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlStyleSandyBrown);
                         }
-                        xlWorkSheet.SetCellValue(rowCounter, 15, Convert.ToString(row[17]));
-                        xlWorkSheet.SetCellValue(rowCounter, 16, Convert.ToDecimal(row[18]));
+                        xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row[17]));
+                        xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToDecimal(row[18]));
                     }
                     for (int iTot = 0; iTot <= 2; iTot++)
                     {
@@ -4288,31 +4067,31 @@ namespace TFSpreadSheetsNext
                 }
 
                 // Vessel Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, $"Total for Vessel {prevVessel}:");
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[0, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[0, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[0, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[0, 3]);
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlBoldWithBorder);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, $"Total for Vessel {prevVessel}:");
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[0, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[0, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[0, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[0, 3]);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlBoldWithBorder);
 
                 // Client Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[1, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[1, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[1, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[1, 3]);
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlBoldWithBorder);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[1, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[1, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[1, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[1, 3]);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlBoldWithBorder);
 
                 // Grand Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, "TOTALS:");
-                xlWorkSheet.SetCellValue(rowCounter, 10, totals[2, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 11, totals[2, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 12, totals[2, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 13, totals[2, 3]);
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, numCols, mStyles.xlBoldWithBorder);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, "TOTALS:");
+                xlWorkSheet.SetCellValue(RowCounter, 10, totals[2, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 11, totals[2, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 12, totals[2, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 13, totals[2, 3]);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, numCols, mStyles.xlBoldWithBorder);
 
                 xlWorkSheet.AutoFitColumn(1, numCols);
                 xlWorkSheet.SaveAs(FileName);
@@ -4326,8 +4105,8 @@ namespace TFSpreadSheetsNext
         }
         public string E56_ClientsPerGroup()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -4346,26 +4125,26 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.SetCellStyle(1, 1, 1, 6, mStyles.xlStyleHeader);
 
-                xlINVCount = 1;
+                RowCounter = 1;
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(mdsDataSet.Tables[0].Rows[i][0]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(mdsDataSet.Tables[0].Rows[i][1]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(mdsDataSet.Tables[0].Rows[i][2]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(mdsDataSet.Tables[0].Rows[i][3]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDateTime(mdsDataSet.Tables[0].Rows[i][5]));
+                    RowCounter++;
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(mdsDataSet.Tables[0].Rows[i][0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(mdsDataSet.Tables[0].Rows[i][1]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(mdsDataSet.Tables[0].Rows[i][2]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(mdsDataSet.Tables[0].Rows[i][3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDateTime(mdsDataSet.Tables[0].Rows[i][5]));
 
 
                     if (mdsDataSet.Tables[0].Rows[i][4] == DBNull.Value ||
                         ((mdsDataSet.Tables[0].Rows[i][4] is DateTime lastTrans) &&
                          ((DateTime.Now.Year - lastTrans.Year) * 12 + DateTime.Now.Month - lastTrans.Month > 24)))
                     {
-                        xlWorkSheet.SetCellStyle(xlINVCount, 5, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 5, mStyles.xlStyleSandyBrown);
                     }
                     else
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToDateTime(mdsDataSet.Tables[0].Rows[i][4]));
+                        xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDateTime(mdsDataSet.Tables[0].Rows[i][4]));
                     }
                 }
 
@@ -4381,13 +4160,13 @@ namespace TFSpreadSheetsNext
         }
         public string E60_Report_For_Lowest_Class()
         {
-            int rowCounter = 1;
+             RowCounter = 1;
             string client, clientName, vessel;
             int columnCount = 23;
 
             try
             {
-                var xlWorkSheet = new SpreadsheetLight.SLDocument();
+
 
                 xlWorkSheet.SetColumnStyle(1, columnCount, mStyles.xlStyleText);
 
@@ -4399,29 +4178,29 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.FreezePanes(1, 0);
 
                 // Header
-                xlWorkSheet.SetCellValue(rowCounter, 1, "Client");
-                xlWorkSheet.SetCellValue(rowCounter, 2, "Client Name");
-                xlWorkSheet.SetCellValue(rowCounter, 3, "Vessel");
-                xlWorkSheet.SetCellValue(rowCounter, 4, "P-T Number");
-                xlWorkSheet.SetCellValue(rowCounter, 5, "Inv. Date");
-                xlWorkSheet.SetCellValue(rowCounter, 6, "Booking Date");
-                xlWorkSheet.SetCellValue(rowCounter, 7, "Description");
-                xlWorkSheet.SetCellValue(rowCounter, 8, "Class Of Service");
-                xlWorkSheet.SetCellValue(rowCounter, 9, "Cabin");
-                xlWorkSheet.SetCellValue(rowCounter, 10, "Tkt");
-                xlWorkSheet.SetCellValue(rowCounter, 11, "Pax");
-                xlWorkSheet.SetCellValue(rowCounter, 12, "A/L");
-                xlWorkSheet.SetCellValue(rowCounter, 13, "Routing");
-                xlWorkSheet.SetCellValue(rowCounter, 14, "Flight Date");
-                xlWorkSheet.SetCellValue(rowCounter, 15, "Fare");
-                xlWorkSheet.SetCellValue(rowCounter, 16, "Taxes");
-                xlWorkSheet.SetCellValue(rowCounter, 17, "Discount");
-                xlWorkSheet.SetCellValue(rowCounter, 18, "Total Payable");
-                xlWorkSheet.SetCellValue(rowCounter, 19, "Fare Basis");
-                xlWorkSheet.SetCellValue(rowCounter, 20, "Transaction Type");
-                xlWorkSheet.SetCellValue(rowCounter, 21, "VOID");
-                xlWorkSheet.SetCellValue(rowCounter, 22, "Connected Document");
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlStyleBisqueWithBorder);
+                xlWorkSheet.SetCellValue(RowCounter, 1, "Client");
+                xlWorkSheet.SetCellValue(RowCounter, 2, "Client Name");
+                xlWorkSheet.SetCellValue(RowCounter, 3, "Vessel");
+                xlWorkSheet.SetCellValue(RowCounter, 4, "P-T Number");
+                xlWorkSheet.SetCellValue(RowCounter, 5, "Inv. Date");
+                xlWorkSheet.SetCellValue(RowCounter, 6, "Booking Date");
+                xlWorkSheet.SetCellValue(RowCounter, 7, "Description");
+                xlWorkSheet.SetCellValue(RowCounter, 8, "Class Of Service");
+                xlWorkSheet.SetCellValue(RowCounter, 9, "Cabin");
+                xlWorkSheet.SetCellValue(RowCounter, 10, "Tkt");
+                xlWorkSheet.SetCellValue(RowCounter, 11, "Pax");
+                xlWorkSheet.SetCellValue(RowCounter, 12, "A/L");
+                xlWorkSheet.SetCellValue(RowCounter, 13, "Routing");
+                xlWorkSheet.SetCellValue(RowCounter, 14, "Flight Date");
+                xlWorkSheet.SetCellValue(RowCounter, 15, "Fare");
+                xlWorkSheet.SetCellValue(RowCounter, 16, "Taxes");
+                xlWorkSheet.SetCellValue(RowCounter, 17, "Discount");
+                xlWorkSheet.SetCellValue(RowCounter, 18, "Total Payable");
+                xlWorkSheet.SetCellValue(RowCounter, 19, "Fare Basis");
+                xlWorkSheet.SetCellValue(RowCounter, 20, "Transaction Type");
+                xlWorkSheet.SetCellValue(RowCounter, 21, "VOID");
+                xlWorkSheet.SetCellValue(RowCounter, 22, "Connected Document");
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlStyleBisqueWithBorder);
 
                 // Data rows
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
@@ -4431,34 +4210,34 @@ namespace TFSpreadSheetsNext
                     clientName = row[1] == DBNull.Value ? string.Empty : row[1]?.ToString() ?? string.Empty;
                     vessel = row[5] == DBNull.Value ? string.Empty : row[5]?.ToString() ?? string.Empty;
 
-                    rowCounter++;
-                    xlWorkSheet.SetCellValue(rowCounter, 1, client);// Client
-                    xlWorkSheet.SetCellValue(rowCounter, 2, clientName);// Client Name
-                    xlWorkSheet.SetCellValue(rowCounter, 3, vessel);// Vessel
-                    xlWorkSheet.SetCellValue(rowCounter, 4, Convert.ToString(row[3]));// P-T Number
-                    xlWorkSheet.SetCellValue(rowCounter, 5, Convert.ToDateTime(row[4]));// Inv. Date
-                    xlWorkSheet.SetCellValue(rowCounter, 6, Convert.ToDateTime(row["EntryDate"]));// Booking Date
-                    xlWorkSheet.SetCellValue(rowCounter, 7, Convert.ToString(row[6]));// Description
-                    xlWorkSheet.SetCellValue(rowCounter, 8, Convert.ToString(row[16]));// Class Of Service
-                    xlWorkSheet.SetCellValue(rowCounter, 9, Convert.ToString(row[17]));// Cabin
-                    xlWorkSheet.SetCellValue(rowCounter, 10, Convert.ToString(row[18]));// Tkt
-                    xlWorkSheet.SetCellValue(rowCounter, 11, Convert.ToInt32(row[7]));// Pax
-                    xlWorkSheet.SetCellValue(rowCounter, 12, Convert.ToString(row[8]));// A/L
-                    xlWorkSheet.SetCellValue(rowCounter, 13, Convert.ToString(row[9]));// Routing
-                    xlWorkSheet.SetCellValue(rowCounter, 14, Convert.ToDateTime(row[10]));// Flight Date
-                    xlWorkSheet.SetCellValue(rowCounter, 15, Convert.ToDecimal(row[12]));// Fare
-                    xlWorkSheet.SetCellValue(rowCounter, 16, Convert.ToDecimal(row[11]));// Taxes
-                    xlWorkSheet.SetCellValue(rowCounter, 17, Convert.ToDecimal(row[13]));// Discount
-                    xlWorkSheet.SetCellValue(rowCounter, 18, Convert.ToDecimal(row[14]));// Total Payable
-                    xlWorkSheet.SetCellValue(rowCounter, 19, Convert.ToString(row["FareBasis"]));// Fare Basis
-                    xlWorkSheet.SetCellValue(rowCounter, 20, Convert.ToString(row["TransactionType"]));// Transaction Type
-                    xlWorkSheet.SetCellValue(rowCounter, 21, Convert.ToString(row["Void"]));// VOID
-                    xlWorkSheet.SetCellValue(rowCounter, 22, Convert.ToString(row["ConnectedDocument"]));// Connected Document
+                    RowCounter++;
+                    xlWorkSheet.SetCellValue(RowCounter, 1, client);// Client
+                    xlWorkSheet.SetCellValue(RowCounter, 2, clientName);// Client Name
+                    xlWorkSheet.SetCellValue(RowCounter, 3, vessel);// Vessel
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3]));// P-T Number
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToDateTime(row[4]));// Inv. Date
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDateTime(row["EntryDate"]));// Booking Date
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6]));// Description
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[16]));// Class Of Service
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[17]));// Cabin
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[18]));// Tkt
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToInt32(row[7]));// Pax
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[8]));// A/L
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[9]));// Routing
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDateTime(row[10]));// Flight Date
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDecimal(row[12]));// Fare
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToDecimal(row[11]));// Taxes
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToDecimal(row[13]));// Discount
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToDecimal(row[14]));// Total Payable
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row["FareBasis"]));// Fare Basis
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row["TransactionType"]));// Transaction Type
+                    xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row["Void"]));// VOID
+                    xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row["ConnectedDocument"]));// Connected Document
 
                     if (Convert.ToInt32(row["Omit"]) == 1)
                     {
-                        xlWorkSheet.SetCellValue(rowCounter, 23, "OMIT");
-                        xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellValue(RowCounter, 23, "OMIT");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlStyleSandyBrown);
                     }
                 }
 
@@ -4472,10 +4251,10 @@ namespace TFSpreadSheetsNext
                 throw new Exception($"E60_Report_For_Lowest_Class\r\n{ex.Message}");
             }
         }
-        public string E63_AirTicketSalesTemenos()//(ReportsNext.ReportsCollection mReport, string FileName)
+        public string E63_AirTicketSalesTemenos()
         {
-            var xlWorkSheet = new SpreadsheetLight.SLDocument();
-            int xlINVCount = 0;
+
+            RowCounter = 0;
 
             try
             {
@@ -4512,43 +4291,43 @@ namespace TFSpreadSheetsNext
 
                 xlWorkSheet.SetCellStyle(1, 1, 1, 20, mStyles.xlStyleHeader);
 
-                xlINVCount = 1;
+                RowCounter = 1;
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
 
                     var row = mdsDataSet.Tables[0].Rows[i];
 
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row["Passenger"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row["Passenger"]));
                     if (Convert.ToInt32(row["InvNumber"]) != 0)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row["InvCode"]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row["InvNumber"]));
-                        xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToDateTime(row["InvoiceDate"]));
+                        xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row["InvCode"]));
+                        xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row["InvNumber"]));
+                        xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToDateTime(row["InvoiceDate"]));
                     }
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row["Vessel"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToDecimal(row["NetPayable"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row["TransactionType"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row["TicketingAirline"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToString(row["Routing"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToDateTime(row["DepartureDate"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToDateTime(row["ArrivalDate"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row["PNR"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row["01-BookedBy"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row["04-ReasonForTravel"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToString(row["05-CostCentre"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row["12-Passenger ID"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToString(row["18-REF1"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row["20-REF3"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row["23-REF6"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row["19-REF2"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row["Vessel"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToDecimal(row["NetPayable"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row["TransactionType"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row["TicketingAirline"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row["Routing"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToDateTime(row["DepartureDate"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToDateTime(row["ArrivalDate"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row["PNR"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row["01-BookedBy"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row["04-ReasonForTravel"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToString(row["05-CostCentre"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row["12-Passenger ID"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row["18-REF1"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row["20-REF3"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row["23-REF6"]));
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row["19-REF2"]));
 
                     if (!string.IsNullOrEmpty(row["Omit"]?.ToString()))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 20, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 20, mStyles.xlStyleSandyBrown);
                     if (!string.IsNullOrEmpty(row["Void"]?.ToString()))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 20, mStyles.xlStyleGrayItalic);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 20, mStyles.xlStyleGrayItalic);
                     if (row["ActionType"]?.ToString() == "Refund")
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 20, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 20, mStyles.xlStyleRedFont);
                 }
 
                 xlWorkSheet.AutoFitColumn(1, 20);
@@ -4564,7 +4343,7 @@ namespace TFSpreadSheetsNext
         }
         public string E64_LowestClasses()
         {
-            int rowCounter = 2;
+             RowCounter = 2;
             string? client, clientName, vessel, bookingClass, classRank, itin, airTicketType, isExchangedText, prevClient = "", prevClientName = "", prevVessel = "";
             int classLevel;
             long airTicketTypeId;
@@ -4573,31 +4352,21 @@ namespace TFSpreadSheetsNext
 
             try
             {
-                var xlWorkSheet = new SpreadsheetLight.SLDocument();
-
-                // Styles
-
-
-
-
-
                 int columnCount = mobjReports.BooleanOption1 ? 20 : 19;
 
                 xlWorkSheet.SetColumnStyle(1, columnCount, mStyles.xlStyleText);
-
                 xlWorkSheet.SetColumnStyle(14, 17, mStyles.xlStyleDecimal);
-
                 xlWorkSheet.SetColumnStyle(2, mStyles.xlStyleDate);
                 xlWorkSheet.SetColumnStyle(13, mStyles.xlStyleDate);
                 xlWorkSheet.SetColumnStyle(5, 6, mStyles.xlCentred);
 
                 // Header rows
-                xlWorkSheet.SetCellValue(rowCounter, 1, "ATPI Greece Travel Marine S.A., 31-33 Athinon Avenue, 104 47 Athens, Greece");
-                xlWorkSheet.MergeWorksheetCells(rowCounter, 1, rowCounter, columnCount);
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, "ATPI Ελλάς - Ταξειδιωτική Ναυτιλιακή Α.Ε., Λ.Αθηνών 31-33, 104 47, Αθήνα-ΑΦΜ 094333389 ΦΑΕ Αθηνών");
-                xlWorkSheet.MergeWorksheetCells(rowCounter, 1, rowCounter, columnCount);
-                rowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, CompanyNameEnglish);
+                xlWorkSheet.MergeWorksheetCells(RowCounter, 1, RowCounter, columnCount);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, CompanyNameGreek);
+                xlWorkSheet.MergeWorksheetCells(RowCounter, 1, RowCounter, columnCount);
+                RowCounter++;
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
@@ -4621,93 +4390,93 @@ namespace TFSpreadSheetsNext
                         isExchangedText += $"Related {row[34]}";
                     }
 
-                    if (rowCounter == 4 || client != prevClient || vessel != prevVessel)
+                    if (RowCounter == 4 || client != prevClient || vessel != prevVessel)
                     {
-                        if (rowCounter > 4)
+                        if (RowCounter > 4)
                         {
                             // Vessel Total
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Total for Vessel {prevVessel}:");
-                            xlWorkSheet.SetCellValue(rowCounter, 14, totals[0, 0]);
-                            xlWorkSheet.SetCellValue(rowCounter, 15, totals[0, 1]);
-                            xlWorkSheet.SetCellValue(rowCounter, 16, totals[0, 2]);
-                            xlWorkSheet.SetCellValue(rowCounter, 17, totals[0, 3]);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlBoldWithBorder);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Total for Vessel {prevVessel}:");
+                            xlWorkSheet.SetCellValue(RowCounter, 14, totals[0, 0]);
+                            xlWorkSheet.SetCellValue(RowCounter, 15, totals[0, 1]);
+                            xlWorkSheet.SetCellValue(RowCounter, 16, totals[0, 2]);
+                            xlWorkSheet.SetCellValue(RowCounter, 17, totals[0, 3]);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlBoldWithBorder);
                             totals[0, 0] = totals[0, 1] = totals[0, 2] = totals[0, 3] = 0;
 
                             if (client != prevClient)
                             {
                                 // Client Total
-                                rowCounter++;
-                                xlWorkSheet.SetCellValue(rowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
-                                xlWorkSheet.SetCellValue(rowCounter, 14, totals[1, 0]);
-                                xlWorkSheet.SetCellValue(rowCounter, 15, totals[1, 1]);
-                                xlWorkSheet.SetCellValue(rowCounter, 16, totals[1, 2]);
-                                xlWorkSheet.SetCellValue(rowCounter, 17, totals[1, 3]);
-                                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlBoldWithBorder);
+                                RowCounter++;
+                                xlWorkSheet.SetCellValue(RowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
+                                xlWorkSheet.SetCellValue(RowCounter, 14, totals[1, 0]);
+                                xlWorkSheet.SetCellValue(RowCounter, 15, totals[1, 1]);
+                                xlWorkSheet.SetCellValue(RowCounter, 16, totals[1, 2]);
+                                xlWorkSheet.SetCellValue(RowCounter, 17, totals[1, 3]);
+                                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlBoldWithBorder);
                                 totals[1, 0] = totals[1, 1] = totals[1, 2] = totals[1, 3] = 0;
                             }
                         }
-                        if (rowCounter == 1 || client != prevClient)
+                        if (RowCounter == 1 || client != prevClient)
                         {
-                            rowCounter += 2;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Statement Period:({mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy})");
-                            xlWorkSheet.MergeWorksheetCells(rowCounter, 1, rowCounter, columnCount);
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, mStyles.xlStyleBisque);
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, $"Client: {client} {clientName}");
-                            xlWorkSheet.SetCellValue(rowCounter, 17, Convert.ToString(row[2]));
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlCyanWithBorder);
-                            rowCounter++;
-                            xlWorkSheet.SetCellValue(rowCounter, 1, "P-T Number");
-                            xlWorkSheet.SetCellValue(rowCounter, 2, "Inv. Date");
-                            xlWorkSheet.SetCellValue(rowCounter, 3, "Vessel");
-                            xlWorkSheet.SetCellValue(rowCounter, 4, "Description");
-                            xlWorkSheet.SetCellValue(rowCounter, 5, "Booking Class");
-                            xlWorkSheet.SetCellValue(rowCounter, 6, "Class Rank");
-                            xlWorkSheet.SetCellValue(rowCounter, 7, "Marine");
-                            xlWorkSheet.SetCellValue(rowCounter, 8, "Class Of Service");
-                            xlWorkSheet.SetCellValue(rowCounter, 9, "Tkt");
-                            xlWorkSheet.SetCellValue(rowCounter, 10, "Pax");
-                            xlWorkSheet.SetCellValue(rowCounter, 11, "A/L");
-                            xlWorkSheet.SetCellValue(rowCounter, 12, "Routing");
-                            xlWorkSheet.SetCellValue(rowCounter, 13, "Flight Date");
-                            xlWorkSheet.SetCellValue(rowCounter, 14, "Fare");
-                            xlWorkSheet.SetCellValue(rowCounter, 15, "Taxes");
-                            xlWorkSheet.SetCellValue(rowCounter, 16, "Discount");
-                            xlWorkSheet.SetCellValue(rowCounter, 17, "Total Payable");
-                            xlWorkSheet.SetCellValue(rowCounter, 18, "Lowest Fare");
+                            RowCounter += 2;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Statement Period:({mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy})");
+                            xlWorkSheet.MergeWorksheetCells(RowCounter, 1, RowCounter, columnCount);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, mStyles.xlStyleBisque);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, $"Client: {client} {clientName}");
+                            xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToString(row[2]));
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlCyanWithBorder);
+                            RowCounter++;
+                            xlWorkSheet.SetCellValue(RowCounter, 1, "P-T Number");
+                            xlWorkSheet.SetCellValue(RowCounter, 2, "Inv. Date");
+                            xlWorkSheet.SetCellValue(RowCounter, 3, "Vessel");
+                            xlWorkSheet.SetCellValue(RowCounter, 4, "Description");
+                            xlWorkSheet.SetCellValue(RowCounter, 5, "Booking Class");
+                            xlWorkSheet.SetCellValue(RowCounter, 6, "Class Rank");
+                            xlWorkSheet.SetCellValue(RowCounter, 7, "Marine");
+                            xlWorkSheet.SetCellValue(RowCounter, 8, "Class Of Service");
+                            xlWorkSheet.SetCellValue(RowCounter, 9, "Tkt");
+                            xlWorkSheet.SetCellValue(RowCounter, 10, "Pax");
+                            xlWorkSheet.SetCellValue(RowCounter, 11, "A/L");
+                            xlWorkSheet.SetCellValue(RowCounter, 12, "Routing");
+                            xlWorkSheet.SetCellValue(RowCounter, 13, "Flight Date");
+                            xlWorkSheet.SetCellValue(RowCounter, 14, "Fare");
+                            xlWorkSheet.SetCellValue(RowCounter, 15, "Taxes");
+                            xlWorkSheet.SetCellValue(RowCounter, 16, "Discount");
+                            xlWorkSheet.SetCellValue(RowCounter, 17, "Total Payable");
+                            xlWorkSheet.SetCellValue(RowCounter, 18, "Lowest Fare");
                             if (mobjReports.BooleanOption1)
                             {
-                                xlWorkSheet.SetCellValue(rowCounter, 19, "Fare Basis");
-                                xlWorkSheet.SetCellValue(rowCounter, 20, "Notes");
+                                xlWorkSheet.SetCellValue(RowCounter, 19, "Fare Basis");
+                                xlWorkSheet.SetCellValue(RowCounter, 20, "Notes");
                             }
                             else
                             {
-                                xlWorkSheet.SetCellValue(rowCounter, 19, "Notes");
+                                xlWorkSheet.SetCellValue(RowCounter, 19, "Notes");
                             }
-                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlStyleBisqueWithBorder);
+                            xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlStyleBisqueWithBorder);
                         }
                         if (prevClient != client || prevVessel != vessel)
                         {
-                            rowCounter++;
+                            RowCounter++;
                         }
                         prevClient = client;
                         prevClientName = clientName;
                         prevVessel = vessel;
                     }
-                    rowCounter++;
+                    RowCounter++;
 
-                    xlWorkSheet.SetCellValue(rowCounter, 1, Convert.ToString(row[3]));
-                    xlWorkSheet.SetCellValue(rowCounter, 2, Convert.ToDateTime(row[4]));
-                    xlWorkSheet.SetCellValue(rowCounter, 3, Convert.ToString(row[5]));
-                    xlWorkSheet.SetCellValue(rowCounter, 4, Convert.ToString(row[6]));
-                    xlWorkSheet.SetCellValue(rowCounter, 5, bookingClass);
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[3]));
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToDateTime(row[4]));
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[5]));
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[6]));
+                    xlWorkSheet.SetCellValue(RowCounter, 5, bookingClass);
 
                     if (airTicketTypeId != 323)
                     {
-                        xlWorkSheet.SetCellValue(rowCounter, 6, airTicketType);
-                        xlWorkSheet.SetCellStyle(rowCounter, 6, mStyles.xlStyleYellowBold);
+                        xlWorkSheet.SetCellValue(RowCounter, 6, airTicketType);
+                        xlWorkSheet.SetCellStyle(RowCounter, 6, mStyles.xlStyleYellowBold);
                     }
                     else
                     {
@@ -4715,41 +4484,41 @@ namespace TFSpreadSheetsNext
                         {
                             if (itin[..3] == itin.Substring(itin.Length - 3, 3))
                             {
-                                xlWorkSheet.SetCellValue(rowCounter, 6, "RT");
-                                xlWorkSheet.SetCellStyle(rowCounter, 6, mStyles.xlStyleYellowBold);
+                                xlWorkSheet.SetCellValue(RowCounter, 6, "RT");
+                                xlWorkSheet.SetCellStyle(RowCounter, 6, mStyles.xlStyleYellowBold);
                             }
                             else if (classLevel > 0)
                             {
-                                xlWorkSheet.SetCellValue(rowCounter, 6, classLevel);
+                                xlWorkSheet.SetCellValue(RowCounter, 6, classLevel);
                                 if (classLevel <= 2)
-                                    xlWorkSheet.SetCellStyle(rowCounter, 6, mStyles.xlStyleLightGreen);
+                                    xlWorkSheet.SetCellStyle(RowCounter, 6, mStyles.xlStyleLightGreen);
                             }
                         }
                         if (Convert.ToInt32(row[27]) == 1)
                         {
-                            xlWorkSheet.SetCellValue(rowCounter, 7, "Marine");
+                            xlWorkSheet.SetCellValue(RowCounter, 7, "Marine");
                         }
                     }
 
-                    xlWorkSheet.SetCellValue(rowCounter, 8, Convert.ToString(row[17]));
-                    xlWorkSheet.SetCellValue(rowCounter, 9, Convert.ToString(row[18]));
-                    xlWorkSheet.SetCellValue(rowCounter, 10, Convert.ToInt32(row[7]));
-                    xlWorkSheet.SetCellValue(rowCounter, 11, Convert.ToString(row[8]));
-                    xlWorkSheet.SetCellValue(rowCounter, 12, Convert.ToString(row[9]));
-                    xlWorkSheet.SetCellValue(rowCounter, 13, Convert.ToDateTime(row[10]));
-                    xlWorkSheet.SetCellValue(rowCounter, 14, Convert.ToDecimal(row[12]));
-                    xlWorkSheet.SetCellValue(rowCounter, 15, Convert.ToDecimal(row[11]));
-                    xlWorkSheet.SetCellValue(rowCounter, 16, Convert.ToDecimal(row[13]));
-                    xlWorkSheet.SetCellValue(rowCounter, 17, Convert.ToDecimal(row[14]));
-                    xlWorkSheet.SetCellValue(rowCounter, 18, Convert.ToString(row[35]));
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[17]));
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToString(row[18]));
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToInt32(row[7]));
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[8]));
+                    xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[9]));
+                    xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToDateTime(row[10]));
+                    xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToDecimal(row[12]));
+                    xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDecimal(row[11]));
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToDecimal(row[13]));
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToDecimal(row[14]));
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[35]));
                     if (mobjReports.BooleanOption1)
                     {
-                        xlWorkSheet.SetCellValue(rowCounter, 19, Convert.ToString(row["FareBasis"]));
-                        xlWorkSheet.SetCellValue(rowCounter, 20, isExchangedText);
+                        xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row["FareBasis"]));
+                        xlWorkSheet.SetCellValue(RowCounter, 20, isExchangedText);
                     }
                     else
                     {
-                        xlWorkSheet.SetCellValue(rowCounter, 19, isExchangedText);
+                        xlWorkSheet.SetCellValue(RowCounter, 19, isExchangedText);
                     }
                     for (int iTot = 0; iTot <= 2; iTot++)
                     {
@@ -4761,31 +4530,31 @@ namespace TFSpreadSheetsNext
                 }
 
                 // Vessel Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, $"Total for Vessel {prevVessel}:");
-                xlWorkSheet.SetCellValue(rowCounter, 14, totals[0, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 15, totals[0, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 16, totals[0, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 17, totals[0, 3]);
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlBoldWithBorder);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, $"Total for Vessel {prevVessel}:");
+                xlWorkSheet.SetCellValue(RowCounter, 14, totals[0, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 15, totals[0, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 16, totals[0, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 17, totals[0, 3]);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlBoldWithBorder);
 
                 // Client Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
-                xlWorkSheet.SetCellValue(rowCounter, 14, totals[1, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 15, totals[1, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 16, totals[1, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 17, totals[1, 3]);
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlBoldWithBorder);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, $"Total Payable {prevClient} {prevClientName}:");
+                xlWorkSheet.SetCellValue(RowCounter, 14, totals[1, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 15, totals[1, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 16, totals[1, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 17, totals[1, 3]);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlBoldWithBorder);
 
                 // Grand Total
-                rowCounter++;
-                xlWorkSheet.SetCellValue(rowCounter, 1, "TOTALS:");
-                xlWorkSheet.SetCellValue(rowCounter, 14, totals[2, 0]);
-                xlWorkSheet.SetCellValue(rowCounter, 15, totals[2, 1]);
-                xlWorkSheet.SetCellValue(rowCounter, 16, totals[2, 2]);
-                xlWorkSheet.SetCellValue(rowCounter, 17, totals[2, 3]);
-                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, columnCount, mStyles.xlBoldWithBorder);
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, "TOTALS:");
+                xlWorkSheet.SetCellValue(RowCounter, 14, totals[2, 0]);
+                xlWorkSheet.SetCellValue(RowCounter, 15, totals[2, 1]);
+                xlWorkSheet.SetCellValue(RowCounter, 16, totals[2, 2]);
+                xlWorkSheet.SetCellValue(RowCounter, 17, totals[2, 3]);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, columnCount, mStyles.xlBoldWithBorder);
 
                 xlWorkSheet.AutoFitColumn(1, columnCount);
                 xlWorkSheet.SaveAs(FileName);
@@ -4814,7 +4583,7 @@ namespace TFSpreadSheetsNext
         }
         public string E65_OpsSales()
         {
-            int xlINVCount = 1;
+            RowCounter = 1;
 
             try
             {
@@ -4878,72 +4647,72 @@ namespace TFSpreadSheetsNext
                 // Data rows
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row[0])); // Issue Date
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToString(row[1])); // Client Code
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToString(row[2])); // Client Name
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row[3])); // Omit
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row[4])); // Void
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row[5])); // PNR
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row[6])); // Ticket Number
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToString(row[7])); // Passenger
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, Convert.ToInt32(row[8])); // Pax Count
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row[9])); // Product Type
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row[10])); // Action Type
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToDateTime(row[0])); // Issue Date
+                    xlWorkSheet.SetCellValue(RowCounter, 2, Convert.ToString(row[1])); // Client Code
+                    xlWorkSheet.SetCellValue(RowCounter, 3, Convert.ToString(row[2])); // Client Name
+                    xlWorkSheet.SetCellValue(RowCounter, 4, Convert.ToString(row[3])); // Omit
+                    xlWorkSheet.SetCellValue(RowCounter, 5, Convert.ToString(row[4])); // Void
+                    xlWorkSheet.SetCellValue(RowCounter, 6, Convert.ToString(row[5])); // PNR
+                    xlWorkSheet.SetCellValue(RowCounter, 7, Convert.ToString(row[6])); // Ticket Number
+                    xlWorkSheet.SetCellValue(RowCounter, 8, Convert.ToString(row[7])); // Passenger
+                    xlWorkSheet.SetCellValue(RowCounter, 9, Convert.ToInt32(row[8])); // Pax Count
+                    xlWorkSheet.SetCellValue(RowCounter, 10, Convert.ToString(row[9])); // Product Type
+                    xlWorkSheet.SetCellValue(RowCounter, 11, Convert.ToString(row[10])); // Action Type
                     if (Convert.ToInt32(row[13]) != 0)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToString(row[11])); // Inv Code
-                        xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row[12])); // Inv Series
-                        xlWorkSheet.SetCellValue(xlINVCount, 14, Convert.ToString(row[13])); // Inv Number
-                        xlWorkSheet.SetCellValue(xlINVCount, 15, Convert.ToDateTime(row[14])); // Invoice Date
+                        xlWorkSheet.SetCellValue(RowCounter, 12, Convert.ToString(row[11])); // Inv Code
+                        xlWorkSheet.SetCellValue(RowCounter, 13, Convert.ToString(row[12])); // Inv Series
+                        xlWorkSheet.SetCellValue(RowCounter, 14, Convert.ToString(row[13])); // Inv Number
+                        xlWorkSheet.SetCellValue(RowCounter, 15, Convert.ToDateTime(row[14])); // Invoice Date
                     }
-                    xlWorkSheet.SetCellValue(xlINVCount, 16, Convert.ToString(row[15])); // Vessel
-                    xlWorkSheet.SetCellValue(xlINVCount, 17, Convert.ToDecimal(row[16])); // Net Payable
-                    xlWorkSheet.SetCellValue(xlINVCount, 18, Convert.ToString(row[17])); // Verified
-                    xlWorkSheet.SetCellValue(xlINVCount, 19, Convert.ToString(row[18])); // Remarks
-                    xlWorkSheet.SetCellValue(xlINVCount, 20, Convert.ToString(row[19])); // Transaction Type
-                    xlWorkSheet.SetCellValue(xlINVCount, 21, Convert.ToString(row[20])); // RegNr
-                    xlWorkSheet.SetCellValue(xlINVCount, 22, Convert.ToString(row[21])); // Ticketing Airline
-                    xlWorkSheet.SetCellValue(xlINVCount, 23, Convert.ToString(row[22])); // Routing
-                    xlWorkSheet.SetCellValue(xlINVCount, 24, Convert.ToString(row[23])); // SalesPerson
-                    xlWorkSheet.SetCellValue(xlINVCount, 25, Convert.ToString(row[24])); // Issuing Agent
-                    xlWorkSheet.SetCellValue(xlINVCount, 26, Convert.ToString(row[25])); // Creator Agent
-                    xlWorkSheet.SetCellValue(xlINVCount, 27, Convert.ToString(row[26])); // Reference
-                    xlWorkSheet.SetCellValue(xlINVCount, 28, Convert.ToDateTime(row[27])); // Departure Date
-                    xlWorkSheet.SetCellValue(xlINVCount, 29, Convert.ToDateTime(row[28])); // Arrival Date
-                    xlWorkSheet.SetCellValue(xlINVCount, 30, Convert.ToString(row[29])); // Connected Document
-                    xlWorkSheet.SetCellValue(xlINVCount, 31, Convert.ToString(row[30])); // Pax Remarks
-                    xlWorkSheet.SetCellValue(xlINVCount, 32, Convert.ToInt32(row[31])); // Doc Status ID
-                    xlWorkSheet.SetCellValue(xlINVCount, 33, Convert.ToString(row[32])); // Cancels Docs
-                    xlWorkSheet.SetCellValue(xlINVCount, 34, Convert.ToString(row[33])); // Sertvices Description
-                    xlWorkSheet.SetCellValue(xlINVCount, 35, Convert.ToString(row[34])); // Client Team
-                    xlWorkSheet.SetCellValue(xlINVCount, 36, Convert.ToDecimal(row[35])); // Sell
-                    xlWorkSheet.SetCellValue(xlINVCount, 37, Convert.ToDecimal(row[36])); // Buy
-                    xlWorkSheet.SetCellValue(xlINVCount, 38, Convert.ToDecimal(row[37])); // Profit
-                    xlWorkSheet.SetCellValue(xlINVCount, 39, Convert.ToInt32(row[38])); // PaxCount+-
+                    xlWorkSheet.SetCellValue(RowCounter, 16, Convert.ToString(row[15])); // Vessel
+                    xlWorkSheet.SetCellValue(RowCounter, 17, Convert.ToDecimal(row[16])); // Net Payable
+                    xlWorkSheet.SetCellValue(RowCounter, 18, Convert.ToString(row[17])); // Verified
+                    xlWorkSheet.SetCellValue(RowCounter, 19, Convert.ToString(row[18])); // Remarks
+                    xlWorkSheet.SetCellValue(RowCounter, 20, Convert.ToString(row[19])); // Transaction Type
+                    xlWorkSheet.SetCellValue(RowCounter, 21, Convert.ToString(row[20])); // RegNr
+                    xlWorkSheet.SetCellValue(RowCounter, 22, Convert.ToString(row[21])); // Ticketing Airline
+                    xlWorkSheet.SetCellValue(RowCounter, 23, Convert.ToString(row[22])); // Routing
+                    xlWorkSheet.SetCellValue(RowCounter, 24, Convert.ToString(row[23])); // SalesPerson
+                    xlWorkSheet.SetCellValue(RowCounter, 25, Convert.ToString(row[24])); // Issuing Agent
+                    xlWorkSheet.SetCellValue(RowCounter, 26, Convert.ToString(row[25])); // Creator Agent
+                    xlWorkSheet.SetCellValue(RowCounter, 27, Convert.ToString(row[26])); // Reference
+                    xlWorkSheet.SetCellValue(RowCounter, 28, Convert.ToDateTime(row[27])); // Departure Date
+                    xlWorkSheet.SetCellValue(RowCounter, 29, Convert.ToDateTime(row[28])); // Arrival Date
+                    xlWorkSheet.SetCellValue(RowCounter, 30, Convert.ToString(row[29])); // Connected Document
+                    xlWorkSheet.SetCellValue(RowCounter, 31, Convert.ToString(row[30])); // Pax Remarks
+                    xlWorkSheet.SetCellValue(RowCounter, 32, Convert.ToInt32(row[31])); // Doc Status ID
+                    xlWorkSheet.SetCellValue(RowCounter, 33, Convert.ToString(row[32])); // Cancels Docs
+                    xlWorkSheet.SetCellValue(RowCounter, 34, Convert.ToString(row[33])); // Sertvices Description
+                    xlWorkSheet.SetCellValue(RowCounter, 35, Convert.ToString(row[34])); // Client Team
+                    xlWorkSheet.SetCellValue(RowCounter, 36, Convert.ToDecimal(row[35])); // Sell
+                    xlWorkSheet.SetCellValue(RowCounter, 37, Convert.ToDecimal(row[36])); // Buy
+                    xlWorkSheet.SetCellValue(RowCounter, 38, Convert.ToDecimal(row[37])); // Profit
+                    xlWorkSheet.SetCellValue(RowCounter, 39, Convert.ToInt32(row[38])); // PaxCount+-
 
 
                     // Cancelled/Cancelled Docs
                     if (Convert.ToInt32(row[31]) == 43)
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, "Cancelled");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 39, mStyles.xlStyleItalic);
+                        xlWorkSheet.SetCellValue(RowCounter, 33, "Cancelled");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 39, mStyles.xlStyleItalic);
                     }
                     else if (!string.IsNullOrEmpty(row[32]?.ToString()))
                     {
-                        xlWorkSheet.SetCellValue(xlINVCount, 33, $"Cancels {row[32]}");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 39, mStyles.xlStyleItalic);
+                        xlWorkSheet.SetCellValue(RowCounter, 33, $"Cancels {row[32]}");
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 39, mStyles.xlStyleItalic);
                     }
 
 
                     // Omit/Void/Refund styling
                     if (!string.IsNullOrEmpty(row[3]?.ToString()))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 39, mStyles.xlStyleSandyBrown);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 39, mStyles.xlStyleSandyBrown);
                     if (!string.IsNullOrEmpty(row[4]?.ToString()))
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 39, mStyles.xlStyleGrayItalic);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 39, mStyles.xlStyleGrayItalic);
                     if (row[10]?.ToString() == "Refund")
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 39, mStyles.xlStyleRedFont);
+                        xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 39, mStyles.xlStyleRedFont);
                 }
 
                 xlWorkSheet.AutoFitColumn(1, 39);
@@ -4957,7 +4726,7 @@ namespace TFSpreadSheetsNext
         }
         public string E66_PurchasesPerAirline()
         {
-            int xlINVCount = 0;
+            RowCounter = 0;
             int headerRow = 0;
             decimal[] totals = new decimal[19];
 
@@ -4974,35 +4743,35 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.SetColumnStyle(5, mStyles.xlStyleInteger);
                 xlWorkSheet.SetColumnStyle(9, mStyles.xlStyleInteger);
 
-                xlINVCount = 2;
-                xlWorkSheet.SetCellValue(xlINVCount, 2, $"SALES DATA REPORT - ATHENS {mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy}");
-                xlWorkSheet.SetCellStyle(xlINVCount, 2, xlINVCount, 2, mStyles.xlStyleTitle);
-                xlWorkSheet.MergeWorksheetCells(xlINVCount, 2, xlINVCount, 13);
-                xlINVCount += 2;
+                RowCounter = 2;
+                xlWorkSheet.SetCellValue(RowCounter, 2, $"SALES DATA REPORT - ATHENS {mobjReports.Date1From:dd/MM/yyyy} - {mobjReports.Date1To:dd/MM/yyyy}");
+                xlWorkSheet.SetCellStyle(RowCounter, 2, RowCounter, 2, mStyles.xlStyleTitle);
+                xlWorkSheet.MergeWorksheetCells(RowCounter, 2, RowCounter, 13);
+                RowCounter += 2;
 
-                xlWorkSheet.SetCellValue(xlINVCount, 1, "Airline");
-                xlWorkSheet.SetCellValue(xlINVCount, 2, "Net CY");
-                xlWorkSheet.SetCellValue(xlINVCount, 3, "Fuel CY");
-                xlWorkSheet.SetCellValue(xlINVCount, 4, "Net+Fuel CY");
-                xlWorkSheet.SetCellValue(xlINVCount, 5, "Cpns CY");
-                xlWorkSheet.SetCellValue(xlINVCount, 6, "Net PY");
-                xlWorkSheet.SetCellValue(xlINVCount, 7, "Fuel PY");
-                xlWorkSheet.SetCellValue(xlINVCount, 8, "Net+Fuel PY");
-                xlWorkSheet.SetCellValue(xlINVCount, 9, "Cpns PY");
-                xlWorkSheet.SetCellValue(xlINVCount, 10, "Index Net");
-                xlWorkSheet.SetCellValue(xlINVCount, 11, "Index Fuel");
-                xlWorkSheet.SetCellValue(xlINVCount, 12, "Index Net+Fuel");
-                xlWorkSheet.SetCellValue(xlINVCount, 13, "Index Cpns");
+                xlWorkSheet.SetCellValue(RowCounter, 1, "Airline");
+                xlWorkSheet.SetCellValue(RowCounter, 2, "Net CY");
+                xlWorkSheet.SetCellValue(RowCounter, 3, "Fuel CY");
+                xlWorkSheet.SetCellValue(RowCounter, 4, "Net+Fuel CY");
+                xlWorkSheet.SetCellValue(RowCounter, 5, "Cpns CY");
+                xlWorkSheet.SetCellValue(RowCounter, 6, "Net PY");
+                xlWorkSheet.SetCellValue(RowCounter, 7, "Fuel PY");
+                xlWorkSheet.SetCellValue(RowCounter, 8, "Net+Fuel PY");
+                xlWorkSheet.SetCellValue(RowCounter, 9, "Cpns PY");
+                xlWorkSheet.SetCellValue(RowCounter, 10, "Index Net");
+                xlWorkSheet.SetCellValue(RowCounter, 11, "Index Fuel");
+                xlWorkSheet.SetCellValue(RowCounter, 12, "Index Net+Fuel");
+                xlWorkSheet.SetCellValue(RowCounter, 13, "Index Cpns");
 
-                xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 13, mStyles.xlStyleHeader);
-                xlWorkSheet.FreezePanes(xlINVCount, 0);
-                headerRow = xlINVCount;
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 13, mStyles.xlStyleHeader);
+                xlWorkSheet.FreezePanes(RowCounter, 0);
+                headerRow = RowCounter;
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
-                    xlINVCount++;
+                    RowCounter++;
                     var row = mdsDataSet.Tables[0].Rows[i];
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToString(row[0]));
+                    xlWorkSheet.SetCellValue(RowCounter, 1, Convert.ToString(row[0]));
                     for (int ii = 0; ii <= 2; ii++)
                     {
                         for (int j = 0; j <= 3; j++)
@@ -5011,7 +4780,7 @@ namespace TFSpreadSheetsNext
                             int cellIndex = ii * 4 + j + 2;
                             if (row[colIndex] != DBNull.Value)
                             {
-                                xlWorkSheet.SetCellValue(xlINVCount, cellIndex, Convert.ToDecimal(row[colIndex]));
+                                xlWorkSheet.SetCellValue(RowCounter, cellIndex, Convert.ToDecimal(row[colIndex]));
                                 totals[colIndex] += Convert.ToDecimal(row[colIndex]);
                             }
                         }
@@ -5019,32 +4788,32 @@ namespace TFSpreadSheetsNext
                 }
 
                 // Sort by Cpns CY (6th column) and Net CY (2nd column), descending
-                xlWorkSheet.Sort(headerRow + 1, 1, xlINVCount, 13, 6, false);
-                xlWorkSheet.Sort(headerRow + 1, 1, xlINVCount, 13, 2, false);
+                xlWorkSheet.Sort(headerRow + 1, 1, RowCounter, 13, 6, false);
+                xlWorkSheet.Sort(headerRow + 1, 1, RowCounter, 13, 2, false);
 
-                xlINVCount++;
-                xlWorkSheet.SetCellValue(xlINVCount, 1, "Totals");
+                RowCounter++;
+                xlWorkSheet.SetCellValue(RowCounter, 1, "Totals");
                 for (int ii = 0; ii <= 1; ii++)
                 {
                     for (int j = 0; j <= 3; j++)
                     {
                         int colIndex = ii * 6 + j + 1;
                         int cellIndex = ii * 4 + j + 2;
-                        xlWorkSheet.SetCellValue(xlINVCount, cellIndex, totals[colIndex]);
+                        xlWorkSheet.SetCellValue(RowCounter, cellIndex, totals[colIndex]);
                     }
                 }
 
-                if (totals[7] != 0) xlWorkSheet.SetCellValue(xlINVCount, 10, totals[1] / totals[7] * 100);
-                if (totals[8] != 0) xlWorkSheet.SetCellValue(xlINVCount, 11, totals[2] / totals[8] * 100);
-                if (totals[9] != 0) xlWorkSheet.SetCellValue(xlINVCount, 12, totals[3] / totals[9] * 100);
-                if (totals[10] != 0) xlWorkSheet.SetCellValue(xlINVCount, 13, totals[4] / totals[10] * 100);
+                if (totals[7] != 0) xlWorkSheet.SetCellValue(RowCounter, 10, totals[1] / totals[7] * 100);
+                if (totals[8] != 0) xlWorkSheet.SetCellValue(RowCounter, 11, totals[2] / totals[8] * 100);
+                if (totals[9] != 0) xlWorkSheet.SetCellValue(RowCounter, 12, totals[3] / totals[9] * 100);
+                if (totals[10] != 0) xlWorkSheet.SetCellValue(RowCounter, 13, totals[4] / totals[10] * 100);
 
-                xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, 13, mStyles.xlStyleHeader);
-                xlWorkSheet.SetCellStyle(headerRow, 1, xlINVCount, 1, mStyles.xlStyleHeader);
+                xlWorkSheet.SetCellStyle(RowCounter, 1, RowCounter, 13, mStyles.xlStyleHeader);
+                xlWorkSheet.SetCellStyle(headerRow, 1, RowCounter, 1, mStyles.xlStyleHeader);
 
-                xlWorkSheet.DrawBorder(headerRow, 2, xlINVCount, 5, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thick, System.Drawing.Color.Black);
-                xlWorkSheet.DrawBorder(headerRow, 6, xlINVCount, 9, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thick, System.Drawing.Color.Black);
-                xlWorkSheet.DrawBorder(headerRow, 10, xlINVCount, 13, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thick, System.Drawing.Color.Black);
+                xlWorkSheet.DrawBorder(headerRow, 2, RowCounter, 5, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thick, System.Drawing.Color.Black);
+                xlWorkSheet.DrawBorder(headerRow, 6, RowCounter, 9, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thick, System.Drawing.Color.Black);
+                xlWorkSheet.DrawBorder(headerRow, 10, RowCounter, 13, DocumentFormat.OpenXml.Spreadsheet.BorderStyleValues.Thick, System.Drawing.Color.Black);
 
                 xlWorkSheet.AutoFitColumn(1, 13);
 
@@ -5058,7 +4827,7 @@ namespace TFSpreadSheetsNext
         }
         public string E67_Columbia()
         {
-            var xlINVCount = 0;
+            var rowCounter = 0;
             const int ColumnCount = 13;
             string oldClientCode = "";
             decimal totalPayable = 0m;
@@ -5077,22 +4846,22 @@ namespace TFSpreadSheetsNext
                 xlWorkSheet.SetColumnStyle(1, 3, mStyles.xlStyleDate);
                 xlWorkSheet.SetColumnStyle(8, mStyles.xlStyleDate);
 
-                xlINVCount++;
+                rowCounter++;
 
-                xlWorkSheet.SetCellValue(xlINVCount, 1, "Booking Date");
-                xlWorkSheet.SetCellValue(xlINVCount, 2, "Ticket Date");
-                xlWorkSheet.SetCellValue(xlINVCount, 3, "Invoice Date");
-                xlWorkSheet.SetCellValue(xlINVCount, 4, "Booked By");
-                xlWorkSheet.SetCellValue(xlINVCount, 5, "Department");
-                xlWorkSheet.SetCellValue(xlINVCount, 6, "Vessel");
-                xlWorkSheet.SetCellValue(xlINVCount, 7, "Invoice Number");
-                xlWorkSheet.SetCellValue(xlINVCount, 8, "Departure Date");
-                xlWorkSheet.SetCellValue(xlINVCount, 9, "Destination");
-                xlWorkSheet.SetCellValue(xlINVCount, 10, "Passenger");
-                xlWorkSheet.SetCellValue(xlINVCount, 11, "Rank");
-                xlWorkSheet.SetCellValue(xlINVCount, 12, "Net Payable");
-                xlWorkSheet.SetCellValue(xlINVCount, 13, "Reason For Travel");
-                xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, ColumnCount, mStyles.xlStyleHeader);
+                xlWorkSheet.SetCellValue(rowCounter, 1, "Booking Date");
+                xlWorkSheet.SetCellValue(rowCounter, 2, "Ticket Date");
+                xlWorkSheet.SetCellValue(rowCounter, 3, "Invoice Date");
+                xlWorkSheet.SetCellValue(rowCounter, 4, "Booked By");
+                xlWorkSheet.SetCellValue(rowCounter, 5, "Department");
+                xlWorkSheet.SetCellValue(rowCounter, 6, "Vessel");
+                xlWorkSheet.SetCellValue(rowCounter, 7, "Invoice Number");
+                xlWorkSheet.SetCellValue(rowCounter, 8, "Departure Date");
+                xlWorkSheet.SetCellValue(rowCounter, 9, "Destination");
+                xlWorkSheet.SetCellValue(rowCounter, 10, "Passenger");
+                xlWorkSheet.SetCellValue(rowCounter, 11, "Rank");
+                xlWorkSheet.SetCellValue(rowCounter, 12, "Net Payable");
+                xlWorkSheet.SetCellValue(rowCounter, 13, "Reason For Travel");
+                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, ColumnCount, mStyles.xlStyleHeader);
 
                 for (int i = 0; i < mdsDataSet.Tables[0].Rows.Count; i++)
                 {
@@ -5103,29 +4872,29 @@ namespace TFSpreadSheetsNext
                     {
                         if (!string.IsNullOrEmpty(oldClientCode))
                         {
-                            xlINVCount++;
-                            xlWorkSheet.SetCellValue(xlINVCount, 1, "Total Payable:");
-                            xlWorkSheet.SetCellValue(xlINVCount, 12, totalPayable);
-                            xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, ColumnCount, mStyles.xlStyleHeader);
+                            rowCounter++;
+                            xlWorkSheet.SetCellValue(rowCounter, 1, "Total Payable:");
+                            xlWorkSheet.SetCellValue(rowCounter, 12, totalPayable);
+                            xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, ColumnCount, mStyles.xlStyleHeader);
                             totalPayable = 0m;
-                            xlINVCount += 2;
+                            rowCounter += 2;
                         }
-                        xlINVCount++;
-                        xlWorkSheet.SetCellValue(xlINVCount, 1, $"{clientCode}:{row["ClientName"]}");
-                        xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, ColumnCount, mStyles.xlStyleTitleBold);
-                        xlWorkSheet.MergeWorksheetCells(xlINVCount, 1, xlINVCount, ColumnCount);
+                        rowCounter++;
+                        xlWorkSheet.SetCellValue(rowCounter, 1, $"{clientCode}:{row["ClientName"]}");
+                        xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, ColumnCount, mStyles.xlStyleTitleBold);
+                        xlWorkSheet.MergeWorksheetCells(rowCounter, 1, rowCounter, ColumnCount);
                         oldClientCode = clientCode;
                     }
 
-                    xlINVCount++;
-                    xlWorkSheet.SetCellValue(xlINVCount, 1, Convert.ToDateTime(row["PNRCreationDate"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 2, Convert.ToDateTime(row["TicketDate"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 3, Convert.ToDateTime(row["InvoiceDate"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 4, Convert.ToString(row["BookedBy"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 5, Convert.ToString(row["Office"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 6, Convert.ToString(row["Vessel"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 7, Convert.ToString(row["InvoiceNumber"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 8, Convert.ToDateTime(row["DepartureDate"]));
+                    rowCounter++;
+                    xlWorkSheet.SetCellValue(rowCounter, 1, Convert.ToDateTime(row["PNRCreationDate"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 2, Convert.ToDateTime(row["TicketDate"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 3, Convert.ToDateTime(row["InvoiceDate"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 4, Convert.ToString(row["BookedBy"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 5, Convert.ToString(row["Office"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 6, Convert.ToString(row["Vessel"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 7, Convert.ToString(row["InvoiceNumber"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 8, Convert.ToDateTime(row["DepartureDate"]));
 
                     if (!string.IsNullOrEmpty(row["AirportName"].ToString()) || !string.IsNullOrEmpty(row["CityName"].ToString()))
                     {
@@ -5138,20 +4907,20 @@ namespace TFSpreadSheetsNext
                     {
                         routing = Convert.ToString(row["Routing"]);
                     }
-                    xlWorkSheet.SetCellValue(xlINVCount, 9, routing);
-                    xlWorkSheet.SetCellValue(xlINVCount, 10, Convert.ToString(row["Passenger"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 11, Convert.ToString(row["Rank"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 12, Convert.ToDecimal(row["NetPayable"]));
-                    xlWorkSheet.SetCellValue(xlINVCount, 13, Convert.ToString(row["ReasonForTravel"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 9, routing);
+                    xlWorkSheet.SetCellValue(rowCounter, 10, Convert.ToString(row["Passenger"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 11, Convert.ToString(row["Rank"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 12, Convert.ToDecimal(row["NetPayable"]));
+                    xlWorkSheet.SetCellValue(rowCounter, 13, Convert.ToString(row["ReasonForTravel"]));
 
                     if (decimal.TryParse(row["NetPayable"].ToString(), out decimal netPayable))
                         totalPayable += netPayable;
                 }
 
-                xlINVCount++;
-                xlWorkSheet.SetCellValue(xlINVCount, 1, "Total Payable:");
-                xlWorkSheet.SetCellValue(xlINVCount, 12, totalPayable);
-                xlWorkSheet.SetCellStyle(xlINVCount, 1, xlINVCount, ColumnCount, mStyles.xlStyleHeader);
+                rowCounter++;
+                xlWorkSheet.SetCellValue(rowCounter, 1, "Total Payable:");
+                xlWorkSheet.SetCellValue(rowCounter, 12, totalPayable);
+                xlWorkSheet.SetCellStyle(rowCounter, 1, rowCounter, ColumnCount, mStyles.xlStyleHeader);
                 xlWorkSheet.AutoFitColumn(1, ColumnCount);
 
                 xlWorkSheet.SaveAs(FileName);
@@ -5162,6 +4931,17 @@ namespace TFSpreadSheetsNext
                 throw new Exception(ex.Message);
             }
         }
+        public string E68_GDSImportedPendingItems()
+        {
+            try
+            {
+                return "";
+            }
+            catch (Exception)
+            {
 
+                throw;
+            }
+        }
     }
 }

@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\GaslogReports\GaslogReports.csproj" />
-    <ProjectReference Include="..\GDSImport\GDSImport.csproj" />
+    <ProjectReference Include="..\GDSImportNext\GDSImportNext.csproj" />
     <ProjectReference Include="..\PNRHistoryNext\PNRHistoryNext.csproj" />
   </ItemGroup>
 

@@ -141,7 +141,6 @@
                     optCustomer.Checked = true;
                     mflgLoading = false;
                     ValidateOptions();
-
                 }
             }
         }

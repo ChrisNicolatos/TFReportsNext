@@ -6,8 +6,26 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
+    <Version>2025.17</Version>
+    <AssemblyName>TFReports</AssemblyName>
   </PropertyGroup>
+<PropertyGroup>
+  <!-- desired deployment filename -->
+  <DesiredDeploymentFileName>TFReports.application</DesiredDeploymentFileName>
+</PropertyGroup>
 
+<Target Name="RenameClickOnceApplicationFile" AfterTargets="Publish">
+  <ItemGroup>
+    <!-- generated file produced by ClickOnce publish -->
+    <_ProducedApp Include="$(PublishDir)$(AssemblyName).application" />
+  </ItemGroup>
+
+  <!-- rename only if the produced file exists -->
+  <Move
+    SourceFiles="@(_ProducedApp)"
+    DestinationFiles="$(PublishDir)$(DesiredDeploymentFileName)"
+    Condition="Exists('@(_ProducedApp)')" />
+</Target>
   <ItemGroup>
     <Compile Remove="FormTFReportsNextOptions.cs" />
     <Compile Remove="FormTFReportsNextPrepareFrames.cs" />
